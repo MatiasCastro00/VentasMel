@@ -131,3 +131,4 @@ body.dark .menu-toggle{color:var(--ink);border-color:var(--line)}
   body.dark #search-view tbody tr.paid-sale{background:#173a42}
   body.dark #search-view tbody td.discount-amount{color:#ff9b9b}
 }
+.danger-button{background:#b42318;color:#fff;border-color:#b42318}.danger-button:disabled{opacity:.45;cursor:not-allowed}.icon-button.danger{color:#b42318}.icon-button.danger:hover{background:#fff0ef}#delete-sale-confirmation{display:block;width:100%;margin-top:8px}#results-body td[data-label="Acciones"]{display:flex;align-items:center;gap:7px}body.dark .danger-button{background:#c53c32;color:#fff;border-color:#c53c32}body.dark .icon-button.danger{color:#ff8d84}
