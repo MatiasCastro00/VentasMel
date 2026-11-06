@@ -6,6 +6,7 @@ function amount(text) {
   let raw = match[1].replace(/\s/g, '').replace(/[^\d.,-]/g, '');
   if (raw.includes(',') && raw.includes('.')) raw = raw.lastIndexOf(',') > raw.lastIndexOf('.') ? raw.replaceAll('.', '').replace(',', '.') : raw.replaceAll(',', '');
   else if (raw.includes(',')) raw = raw.replace(',', '.');
+  else if (/^\d{1,3}(\.\d{3})+$/.test(raw)) raw = raw.replaceAll('.', '');
   const value = Number(raw);
   return Number.isFinite(value) ? value : null;
 }
@@ -29,7 +30,27 @@ function parseAvalian(lines) {
   return result;
 }
 
+function parseOmint(lines) {
+  const result = { provider: 'Omint', name: '', plan: '', value: null, discounts: [], capitas: null };
+  let province = '', finalTotal = null;
+  for (const text of lines) {
+    const normalized = plain(text);
+    if (normalized.startsWith('COTIZACION DE ')) result.name = String(text).replace(/^\s*COTIZACI[ÓO]N\s+DE\s+/i, '').trim();
+    else if (normalized.startsWith('PROVINCIA:')) province = String(text).replace(/^\s*Provincia\s*:\s*/i, '').trim();
+    else if (normalized.startsWith('PLAN:')) result.plan = String(text).replace(/^\s*Plan\s*:\s*/i, '').split('·')[0].trim();
+    else if (normalized.startsWith('VALOR DEL PLAN')) { result.value = amount(text); const match = normalized.match(/\((\d+) CAPITAS\)/); if (match) result.capitas = Number(match[1]); }
+    else if (normalized.startsWith('TOTAL A PAGAR')) finalTotal = amount(text);
+    else if (/\(\s*\d+(?:[.,]\d+)?%\s*\)/.test(text) && !normalized.startsWith('TOTAL')) { const value = amount(text); if (value !== null) result.discounts.push(Math.abs(value)); }
+  }
+  if (province && result.plan) result.plan += ` (${province})`;
+  if (!result.plan || result.value === null) throw new Error('No se pudieron leer el plan y el valor de la cotización de Omint.');
+  if (plain(result.name) === 'POTENCIAL ASOCIADO') result.name = '';
+  if (finalTotal !== null && result.discounts.length) result.discounts[result.discounts.length - 1] = Math.max(0, result.value - finalTotal - result.discounts.slice(0, -1).reduce((sum, value) => sum + value, 0));
+  return result;
+}
+
 export function parseQuoteLines(lines) {
+  if (lines.some(text => plain(text).includes('OMINT')) && lines.some(text => plain(text).startsWith('VALOR DEL PLAN'))) return parseOmint(lines);
   if (lines.some(text => plain(text).startsWith('PLAN A COTIZAR:')) && lines.some(text => plain(text).startsWith('PRECIO TOTAL'))) return parseAvalian(lines);
   const result = { provider: 'Sancor', name: '', plan: '', value: null, discounts: [] };
   for (const text of lines) {
