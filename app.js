@@ -91,7 +91,7 @@ async function restoreGoogleSession(){
   try{await listGoogleBooks();const last=localStorage.getItem('ventas-last-'+state.userId);if(last&&Array.from($('drive-sheet-select').options).some(o=>o.value===last)){await chooseGoogleBook(last)}else showView('setup')}
   catch(error){state.token=null;state.mode=null;sourceStatus();showView('setup');toast('No se pudo recuperar la sesión. Conectá Google nuevamente.',true)}
 }
-async function finishStartup(){startupAbort=new AbortController();const timer=setTimeout(()=>startupAbort?.abort(),20000);try{await restoreGoogleSession()}finally{clearTimeout(timer);startupAbort=null;$('startup-loading').remove();document.querySelector('.shell').inert=false}}
+async function finishStartup(){startupAbort=new AbortController();const timer=setTimeout(()=>startupAbort?.abort(),8000);try{await restoreGoogleSession()}catch(error){state.token=null;state.mode=null;sourceStatus();showView('setup');toast('No se pudo recuperar la sesión. Conectá Google nuevamente.',true)}finally{clearTimeout(timer);startupAbort=null;window.startupComplete()}}
 function saveClientConfig(event){
   event.preventDefault();
   const clientId=$('admin-client-id').value.trim();
@@ -312,4 +312,4 @@ function init(){
   for(const id of ['refresh-button','search-refresh'])$(id).addEventListener('click',()=>refresh().then(ok=>toast(ok?'Datos actualizados.':'Datos actualizados; revisá el diseño en Inicio.',!ok)).catch(error=>toast(error.message,true)));
   $('sale-form').elements.fecha.value=suggestedAltaDate('');initSpanishDates();sourceStatus();showView('source');finishStartup();
 }
-document.addEventListener('DOMContentLoaded',init);
+document.addEventListener('DOMContentLoaded',()=>{try{init()}catch(error){console.error('Error al iniciar la aplicación:',error);window.startupFailed()}});

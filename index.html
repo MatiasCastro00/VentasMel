@@ -7,16 +7,31 @@
   <meta name="description" content="Registro y consulta de ventas de prepagas conectado con Google Sheets.">
   <title>Ventas de prepagas</title>
   <link rel="stylesheet" href="vendor/flatpickr.min.css">
-  <link rel="stylesheet" href="styles.css?v=20261106carga">
+  <link rel="stylesheet" href="styles.css?v=20261106inicio2">
+  <script>
+    try {
+      const session=JSON.parse(localStorage.getItem('ventas-google-session')||'null');
+      if(session&&typeof session.token==='string'&&typeof session.userId==='string'&&Number.isFinite(session.expiresAt)&&session.expiresAt>Date.now())document.documentElement.classList.add('restoring-session');
+    } catch (_) {}
+    window.startupFailed=function(){
+      document.documentElement.classList.remove('restoring-session');
+      document.documentElement.classList.add('startup-failed');
+      const title=document.getElementById('startup-title'),message=document.getElementById('startup-message');
+      if(title)title.textContent='No pudimos iniciar la aplicación';
+      if(message)message.textContent='Revisá tu conexión e intentá cargar la página otra vez.';
+    };
+    window.startupTimer=setTimeout(window.startupFailed,12000);
+    window.startupComplete=function(){clearTimeout(window.startupTimer);document.documentElement.classList.remove('restoring-session','startup-failed');const shell=document.querySelector('.shell');if(shell)shell.inert=false};
+  </script>
   <script src="vendor/flatpickr.min.js" defer></script>
   <script src="vendor/flatpickr-es.js" defer></script>
   <script src="vendor/xlsx.full.min.js" defer></script>
   <script src="vendor/jszip.min.js" defer></script>
-  <script src="https://accounts.google.com/gsi/client" defer></script>
-  <script src="app.js?v=20261106carga" defer></script>
+  <script src="https://accounts.google.com/gsi/client" async></script>
+  <script src="app.js?v=20261106inicio2" defer></script>
 </head>
 <body>
-  <div id="startup-loading" class="startup-loading" role="status" aria-live="polite"><div class="startup-loading-card"><span class="startup-loading-brand">claros<span>.</span></span><span class="startup-spinner" aria-hidden="true"></span><strong>Preparando tu espacio</strong><p>Estamos recuperando tu sesión y tu planilla.</p></div></div>
+  <div id="startup-loading" class="startup-loading" role="status" aria-live="polite"><div class="startup-loading-card"><span class="startup-loading-brand">claros<span>.</span></span><span class="startup-spinner" aria-hidden="true"></span><strong id="startup-title">Preparando tu espacio</strong><p id="startup-message">Estamos recuperando tu sesión y tu planilla.</p><a class="startup-retry" href="">Volver a cargar</a></div></div>
   <noscript>Activá JavaScript para usar la aplicación.</noscript>
   <div class="shell" inert>
     <aside class="sidebar">
@@ -35,14 +50,14 @@
     <main class="main">
       <header class="topbar"><div class="topbar-start"><button class="menu-toggle" id="menu-toggle" type="button" aria-controls="main-navigation" aria-expanded="true" aria-label="Ocultar navegación" title="Ocultar navegación">☰</button><div class="breadcrumb">VENTAS <span>/</span> <strong id="breadcrumb-current">INICIO</strong></div></div><div class="top-actions"><span class="sync-indicator" id="sync-indicator">● Sin archivo</span><button class="link-button" id="theme-button" type="button" aria-label="Activar modo oscuro" aria-pressed="false">☾ Modo oscuro</button><button class="link-button" id="settings-button" type="button">Cambiar archivo</button></div></header>
       <div class="content">
-        <section id="source-view" class="view hidden" aria-labelledby="source-title">
+        <section id="source-view" class="view" aria-labelledby="source-title">
           <div class="eyebrow">BIENVENIDO</div><h1 id="source-title">¿Dónde querés guardar tus ventas<span class="accent">?</span></h1><p class="lead">Elegí tu propio Google Drive para usar la planilla desde cualquier dispositivo, o trabajá con un Excel en este dispositivo.</p>
           <div class="source-grid"><button id="choose-google" class="source-card"><span class="source-icon">☁</span><strong>Conectar Google Drive</strong><span id="google-card-description">La conexión simple de Google está en preparación. Cada persona usará su propia cuenta.</span><b id="google-card-action">Ver estado →</b></button><button id="choose-local" class="source-card"><span class="source-icon local-icon">▤</span><strong>Usar Excel local</strong><span>Abrí un archivo .xlsx de tu dispositivo o creá uno nuevo. Guardá los cambios descargando el Excel.</span><b>Elegir Excel →</b></button></div>
         </section>
         <section id="setup-view" class="view hidden" aria-labelledby="setup-title"><div class="eyebrow">GOOGLE DRIVE</div><h1 id="setup-title">Conectar Google</h1><p class="lead">Elegí cómo entrar a tus planillas.</p><div class="source-grid"><div class="panel"><h2>Inicio directo</h2><p class="muted">Elegí tu cuenta de Google desde esta página.</p><div id="google-session" class="google-session hidden"><span>Sesión iniciada con Google.</span><button id="google-signout" class="button outline" type="button">Cerrar sesión</button></div><button id="direct-connect" class="button primary" type="button">Elegir cuenta de Google</button><p id="direct-pending" class="muted hidden">El inicio directo todavía necesita la configuración inicial del administrador.</p><div id="google-picker" class="hidden"><label>Planillas de ventasApp<select id="drive-sheet-select"></select></label><button id="direct-open" class="button outline" type="button">Abrir planilla</button><label>Nombre del archivo nuevo<input id="new-book-name" value="Ventas de prepagas" maxlength="120"></label><button id="direct-create" class="button primary" type="button">Crear archivo</button></div></div><div class="panel"><h2>Google Apps Script</h2><p class="muted">Usá la conexión que ya tenés configurada.</p><a id="script-connect" class="button primary" href="#">Abrir aplicación actual →</a></div></div><p><button id="pending-local" class="button outline" type="button">Usar Excel local</button></p></section>
         <section id="local-view" class="view hidden" aria-labelledby="local-title"><div class="eyebrow">EXCEL LOCAL</div><h1 id="local-title">Tu Excel en este dispositivo<span class="accent">.</span></h1><p class="lead">Abrí un archivo .xlsx existente o creá uno nuevo. Los datos se procesan en este navegador.</p><div class="source-grid"><div class="panel local-panel"><span class="source-icon local-icon">▤</span><h2>Abrir un Excel</h2><p class="muted">Elegí el archivo desde tu dispositivo. El original no se cambia automáticamente.</p><input id="local-file" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"><button id="open-local" class="button primary" type="button">Abrir archivo</button></div><div class="panel local-panel"><span class="source-icon">＋</span><h2>Crear un Excel</h2><p class="muted">Comenzá con una planilla nueva y agregá las prepagas que necesites.</p><input id="local-book-name" type="text" value="Ventas de prepagas" aria-label="Nombre del nuevo Excel"><button id="create-local" class="button primary" type="button">Crear Excel</button></div></div><p class="local-note">En modo local, después de cada cambio se descargará el Excel actualizado. Conservá la última versión descargada.</p></section>
 
-        <section id="home-view" class="view" aria-labelledby="home-title"><div class="eyebrow">TU ESPACIO DE VENTAS</div><div class="heading-row"><div><h1 id="home-title">Todo en un mismo lugar<span class="accent">.</span></h1><p class="lead">Cargá nuevas ventas, encontrá registros y organizá tus prepagas.</p></div><button class="button outline" id="refresh-button" type="button">↻ Actualizar</button></div>
+        <section id="home-view" class="view hidden" aria-labelledby="home-title"><div class="eyebrow">TU ESPACIO DE VENTAS</div><div class="heading-row"><div><h1 id="home-title">Todo en un mismo lugar<span class="accent">.</span></h1><p class="lead">Cargá nuevas ventas, encontrá registros y organizá tus prepagas.</p></div><button class="button outline" id="refresh-button" type="button">↻ Actualizar</button></div>
           <div class="stats"><div class="stat"><span>VENTAS REGISTRADAS</span><strong id="stat-sales">—</strong><small>En todas las prepagas</small></div><div class="stat"><span>PREPAGAS</span><strong id="stat-sheets">—</strong><small>Pestañas de la planilla</small></div><div class="stat stat-accent"><span>ESTADO DE LA PLANILLA</span><strong id="stat-connection">Sin conectar</strong><small id="stat-updated">Conectá Google para empezar</small></div></div>
           <h2 class="section-title">¿Qué querés hacer?</h2><div class="action-grid"><button class="action-card" data-view="add"><span class="action-icon mint">＋</span><strong>Cargar venta</strong><span>Agregá una nueva venta a la prepaga correspondiente.</span><b>Empezar <span>↗</span></b></button><button class="action-card" data-view="search"><span class="action-icon blue">⌕</span><strong>Buscar ventas</strong><span>Consultá clientes, fechas, planes e importes.</span><b>Explorar <span>↗</span></b></button><button class="action-card" data-view="calculator"><span class="action-icon mint">∑</span><strong>Calculadora</strong><span>Sumá ganancias por prepaga y período.</span><b>Calcular <span>↗</span></b></button><button class="action-card" data-view="create"><span class="action-icon peach">▤</span><strong>Modificar prepagas</strong><span>Consultá, agregá o cambiá tus prepagas.</span><b>Ver prepagas <span>↗</span></b></button></div>
           <div class="connected-card"><div><span class="mini-icon">☁</span><strong id="source-summary-title">Archivo listo</strong><p id="connected-description">Tus datos están listos.</p></div><a id="open-sheet" href="#" target="_blank" rel="noopener noreferrer" class="text-link hidden">Abrir planilla ↗</a><button id="download-excel" type="button" class="button outline hidden">Descargar Excel</button></div>
