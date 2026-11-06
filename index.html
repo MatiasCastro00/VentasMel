@@ -7,13 +7,13 @@
   <meta name="description" content="Registro y consulta de ventas de prepagas conectado con Google Sheets.">
   <title>Ventas de prepagas</title>
   <link rel="stylesheet" href="vendor/flatpickr.min.css">
-  <link rel="stylesheet" href="styles.css?v=20261105mobilecards">
+  <link rel="stylesheet" href="styles.css?v=20261106deletefix">
   <script src="vendor/flatpickr.min.js" defer></script>
   <script src="vendor/flatpickr-es.js" defer></script>
   <script src="vendor/xlsx.full.min.js" defer></script>
   <script src="vendor/jszip.min.js" defer></script>
   <script src="https://accounts.google.com/gsi/client" defer></script>
-  <script src="app.js?v=20261106fechas" defer></script>
+  <script src="app.js?v=20261106deletefix" defer></script>
 </head>
 <body>
   <div class="shell">
@@ -57,6 +57,7 @@
       </div>
       <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
       <dialog id="duplicate-dialog" class="duplicate-dialog" aria-labelledby="duplicate-title"><h2 id="duplicate-title">Este cliente ya tiene una carga</h2><p id="duplicate-message"></p><label id="duplicate-select-label" class="hidden">Carga a sobrescribir<select id="duplicate-record"></select></label><div class="dialog-actions"><button id="duplicate-new" class="button primary" type="button">Agregar nueva cotización</button><button id="duplicate-overwrite" class="button outline" type="button">Sobrescribir cotización</button><button id="duplicate-cancel" class="button outline" type="button">Cancelar</button></div></dialog>
+      <dialog id="delete-sale-dialog" class="duplicate-dialog" aria-labelledby="delete-sale-title"><h2 id="delete-sale-title">Eliminar venta</h2><p id="delete-sale-message"></p><label for="delete-sale-confirmation">Escribí <strong>Eliminar</strong> para confirmar<input id="delete-sale-confirmation" type="text" autocomplete="off" spellcheck="false"></label><div class="dialog-actions"><button id="confirm-delete-sale" class="button danger-button" type="button" disabled>Eliminar venta</button><button id="cancel-delete-sale" class="button outline" type="button">Cancelar</button></div></dialog>
     </main>
   </div>
 </body>
