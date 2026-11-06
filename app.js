@@ -24,6 +24,7 @@ function updateSuggestedAlta(){if(!altaManuallyChanged){const form=$('sale-form'
 function setTheme(theme){const dark=theme==='dark';document.body.classList.toggle('dark',dark);$('theme-button').textContent=dark?'☀ Modo claro':'☾ Modo oscuro';$('theme-button').setAttribute('aria-label',dark?'Activar modo claro':'Activar modo oscuro');$('theme-button').setAttribute('aria-pressed',String(dark));localStorage.setItem('ventas-theme',theme)}
 
 function toast(message,error=false){const el=$('toast');el.textContent=message;el.classList.toggle('error',error);el.classList.remove('hidden');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.add('hidden'),5500)}
+function updateGoogleSessionUI(){if(!$('google-session'))return;const connected=!!state.token;$('google-session').classList.toggle('hidden',!connected);$('direct-connect').classList.toggle('hidden',connected);$('direct-pending').classList.toggle('hidden',!!APP_GOOGLE_CLIENT_ID||connected);$('settings-button').textContent=connected?'Cuenta Google':'Cambiar archivo';if(!connected)$('google-picker').classList.add('hidden')}
 function showView(view){
   if(!state.mode&&!['source','setup','local'].includes(view))view='source';
   document.querySelectorAll('.view').forEach(el=>el.classList.add('hidden'));
@@ -31,6 +32,7 @@ function showView(view){
   document.querySelector('.content').scrollTop=0;
   document.querySelectorAll('.nav-item').forEach(el=>el.classList.toggle('active',el.dataset.view===view));
   $('breadcrumb-current').textContent=({source:'ELEGIR ARCHIVO',setup:'GOOGLE DRIVE',local:'EXCEL LOCAL',home:'INICIO',add:'CARGAR VENTA',search:'BUSCAR VENTAS',calculator:'CALCULADORA',create:'MODIFICAR PREPAGAS'})[view];
+  updateGoogleSessionUI();
   if(view==='search')renderResults();
   if(view==='create')renderPrepagas();
   if(view==='calculator')renderCalculator();
@@ -78,7 +80,7 @@ async function listGoogleBooks(){
 async function connectGoogle(event){event.preventDefault();try{
   if(!APP_GOOGLE_CLIENT_ID)throw Error('El inicio directo todavía no está configurado.');
   const grant=await tokenFromGoogle(APP_GOOGLE_CLIENT_ID);state.token=grant.access_token;
-  const profile=await googleFetch('https://openidconnect.googleapis.com/v1/userinfo');state.userId=profile.sub;if(!state.userId)throw Error('No se pudo identificar la cuenta elegida.');
+  const profile=await googleFetch('https://openidconnect.googleapis.com/v1/userinfo');state.userId=profile.sub;if(!state.userId)throw Error('No se pudo identificar la cuenta elegida.');updateGoogleSessionUI();
   const lifetime=Number(grant.expires_in);if(Number.isFinite(lifetime)&&lifetime>0)localStorage.setItem('ventas-google-session',JSON.stringify({token:state.token,userId:state.userId,expiresAt:Date.now()+lifetime*1000-60000}));
   await listGoogleBooks();const last=localStorage.getItem('ventas-last-'+state.userId);if(last&&Array.from($('drive-sheet-select').options).some(o=>o.value===last)){await chooseGoogleBook(last);return}toast('Cuenta conectada. Elegí o creá tu planilla.');
 }catch(error){toast(error.message,true)}}
@@ -285,7 +287,8 @@ function init(){
   $('brand-home').addEventListener('click',()=>showView('home'));
   const theme=localStorage.getItem('ventas-theme')==='dark'?'dark':'light';setTheme(theme);
   $('theme-button').addEventListener('click',()=>setTheme(document.body.classList.contains('dark')?'light':'dark'));
-  $('settings-button').addEventListener('click',()=>{if(state.busy)return;if(editingSale)resetSaleForm();localStorage.removeItem('ventas-google-session');state.token=null;state.mode=null;sourceStatus();showView('source')});
+  $('settings-button').addEventListener('click',()=>{if(state.busy)return;if(editingSale)resetSaleForm();if(state.token){showView('setup');return}localStorage.removeItem('ventas-google-session');state.mode=null;sourceStatus();showView('source')});
+  $('google-signout').addEventListener('click',()=>{if(state.busy)return;localStorage.removeItem('ventas-google-session');state.token=null;state.userId=null;state.mode=null;state.sheetId='';state.book=null;state.fileName='';state.sheets=[];state.rows.clear();state.sales=[];sourceStatus();updateGoogleSessionUI();showView('setup');toast('Sesión de Google cerrada.')});
   $('choose-google').addEventListener('click',()=>showView('setup'));$('choose-local').addEventListener('click',()=>showView('local'));$('pending-local').addEventListener('click',()=>showView('local'));
   $('script-connect').href=APP_SCRIPT_WEB_URL;$('direct-pending').classList.toggle('hidden',!!APP_GOOGLE_CLIENT_ID);$('direct-connect').disabled=!APP_GOOGLE_CLIENT_ID;
   $('direct-connect').addEventListener('click',connectGoogle);$('direct-open').addEventListener('click',()=>chooseGoogleBook($('drive-sheet-select').value).catch(error=>toast(error.message,true)));$('direct-create').addEventListener('click',createGoogleBook);
