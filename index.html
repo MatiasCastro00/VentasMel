@@ -7,16 +7,18 @@
   <meta name="description" content="Registro y consulta de ventas de prepagas conectado con Google Sheets.">
   <title>Ventas de prepagas</title>
   <link rel="stylesheet" href="vendor/flatpickr.min.css">
-  <link rel="stylesheet" href="styles.css?v=20261106deletefix">
+  <link rel="stylesheet" href="styles.css?v=20261106carga">
   <script src="vendor/flatpickr.min.js" defer></script>
   <script src="vendor/flatpickr-es.js" defer></script>
   <script src="vendor/xlsx.full.min.js" defer></script>
   <script src="vendor/jszip.min.js" defer></script>
   <script src="https://accounts.google.com/gsi/client" defer></script>
-  <script src="app.js?v=20261106deletefix" defer></script>
+  <script src="app.js?v=20261106carga" defer></script>
 </head>
 <body>
-  <div class="shell">
+  <div id="startup-loading" class="startup-loading" role="status" aria-live="polite"><div class="startup-loading-card"><span class="startup-loading-brand">claros<span>.</span></span><span class="startup-spinner" aria-hidden="true"></span><strong>Preparando tu espacio</strong><p>Estamos recuperando tu sesión y tu planilla.</p></div></div>
+  <noscript>Activá JavaScript para usar la aplicación.</noscript>
+  <div class="shell" inert>
     <aside class="sidebar">
       <button class="brand" id="brand-home" type="button" aria-label="Claros: ir al inicio"><span class="brand-mark">✦</span><span>claros<span class="brand-dot">.</span><small>VENTAS DE PREPAGAS</small></span></button>
       <div class="nav-label">ESPACIO DE TRABAJO</div>

@@ -14,7 +14,7 @@ const APP_SCRIPT_WEB_URL='https://script.google.com/macros/s/AKfycbxmlp0ZYYPh1eG
 const $=id=>document.getElementById(id);
 const state={mode:null,token:null,clientId:'',sheetId:'',book:null,fileName:'',sheets:[],rows:new Map(),sales:[],busy:false};
 const formattedGoogleSheets=new Set();
-let toastTimer;
+let toastTimer, startupAbort;
 let altaManuallyChanged=false;
 let editingSale=null;
 function suggestedAltaDate(ingreso,now=new Date()){const normalized=String(ingreso||'').trim().toLocaleLowerCase();const date=normalized&&normalized!=='particular'?new Date(now.getFullYear(),now.getMonth()+1,1):now;return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`}
@@ -61,7 +61,7 @@ function tokenFromGoogle(clientId){return new Promise((resolve,reject)=>{
   client.requestAccessToken({prompt:'select_account'});
 })}
 async function googleFetch(url,options={}){
-  const response=await fetch(url,{...options,headers:{Authorization:`Bearer ${state.token}`,'Content-Type':'application/json',...(options.headers||{})}});
+  const response=await fetch(url,{...options,signal:options.signal||startupAbort?.signal,headers:{Authorization:`Bearer ${state.token}`,'Content-Type':'application/json',...(options.headers||{})}});
   let body;try{body=await response.json()}catch{body={}}
   if(!response.ok){if(response.status===401){localStorage.removeItem('ventas-google-session');state.token=null;state.mode=null;sourceStatus();showView('setup')}throw Error(body.error?.message||`Google respondió con error ${response.status}.`)}
   return body;
@@ -89,8 +89,9 @@ async function restoreGoogleSession(){
   if(!saved||typeof saved.token!=='string'||typeof saved.userId!=='string'||!Number.isFinite(saved.expiresAt)||saved.expiresAt<=Date.now()){localStorage.removeItem('ventas-google-session');return}
   state.token=saved.token;state.userId=saved.userId;
   try{await listGoogleBooks();const last=localStorage.getItem('ventas-last-'+state.userId);if(last&&Array.from($('drive-sheet-select').options).some(o=>o.value===last)){await chooseGoogleBook(last)}else showView('setup')}
-  catch(error){state.token=null;state.mode=null;showView('setup');toast('No se pudo recuperar la sesión. Conectá Google nuevamente.',true)}
+  catch(error){state.token=null;state.mode=null;sourceStatus();showView('setup');toast('No se pudo recuperar la sesión. Conectá Google nuevamente.',true)}
 }
+async function finishStartup(){startupAbort=new AbortController();const timer=setTimeout(()=>startupAbort?.abort(),20000);try{await restoreGoogleSession()}finally{clearTimeout(timer);startupAbort=null;$('startup-loading').remove();document.querySelector('.shell').inert=false}}
 function saveClientConfig(event){
   event.preventDefault();
   const clientId=$('admin-client-id').value.trim();
@@ -306,6 +307,6 @@ function init(){
   $('calculator-include-paid').addEventListener('change',()=>$('calculator-results').classList.add('hidden'));
   $('add-discount').addEventListener('click',()=>addDiscount());$('sale-value').addEventListener('input',updateGain);$('sale-multiplier').addEventListener('input',updateGain);$('quote-file').addEventListener('change',importQuote);
   for(const id of ['refresh-button','search-refresh'])$(id).addEventListener('click',()=>refresh().then(ok=>toast(ok?'Datos actualizados.':'Datos actualizados; revisá el diseño en Inicio.',!ok)).catch(error=>toast(error.message,true)));
-  $('sale-form').elements.fecha.value=suggestedAltaDate('');initSpanishDates();sourceStatus();showView('source');restoreGoogleSession();
+  $('sale-form').elements.fecha.value=suggestedAltaDate('');initSpanishDates();sourceStatus();showView('source');finishStartup();
 }
 document.addEventListener('DOMContentLoaded',init);
