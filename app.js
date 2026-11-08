@@ -10,7 +10,6 @@ function extendedSummary(formula,newRow){const match=String(formula||'').replace
 const PAID_COLUMN=14; // O; N conserva posibles fechas de cobro de archivos anteriores.
 const SCOPES='openid email https://www.googleapis.com/auth/drive.file';
 const APP_GOOGLE_CLIENT_ID='402919855314-f8s1jrphaavttdkogrp9esv5kv1lu487.apps.googleusercontent.com'; // Identificador público de la aplicación web.
-const APP_SCRIPT_WEB_URL='https://script.google.com/macros/s/AKfycbxmlp0ZYYPh1eGbDQ-h3xxcjeygL8mU3EfLQIXgr-kLw6y4cwth2fU8xPC3lhCwa3uEFw/exec'; // URL /exec del Apps Script publicado como usuario que accede.
 const APP_ASSET_BASE=new URL('.',document.currentScript?.src||document.querySelector('script[src*="app.js"]')?.src||document.baseURI);
 const $=id=>document.getElementById(id);
 const state={mode:null,token:null,clientId:'',sheetId:'',book:null,fileName:'',sheets:[],rows:new Map(),sales:[],busy:false};
@@ -43,6 +42,9 @@ function showView(view){
   document.querySelectorAll('.view').forEach(el=>el.classList.add('hidden'));
   $(`${view}-view`).classList.remove('hidden');
   document.querySelector('.content').scrollTop=0;
+  document.querySelectorAll('.nav-item').forEach(el=>el.classList.toggle('active',el.dataset.view===view));
+  const moreMenu=$('nav-more-menu'),moreToggle=$('nav-more-toggle');
+  moreMenu.classList.add('hidden');moreToggle.setAttribute('aria-expanded','false');moreToggle.classList.toggle('active',['add','quote','create'].includes(view));
   document.querySelectorAll('.nav-item').forEach(el=>el.classList.toggle('active',el.dataset.view===view));
   $('breadcrumb-current').textContent=({source:'ELEGIR ARCHIVO',setup:'GOOGLE DRIVE',local:'EXCEL LOCAL',home:'INICIO',add:'CARGAR VENTA',search:'BUSCAR VENTAS',calculator:'CALCULADORA',quote:'COTIZACIÓN',create:'MODIFICAR PREPAGAS'})[view];
   updateGoogleSessionUI();
@@ -310,15 +312,18 @@ function init(){
   }
   setNavigationVisible(localStorage.getItem('ventas-nav-visible')!=='false');
   menuToggle.addEventListener('click',()=>setNavigationVisible(document.body.classList.contains('nav-hidden')));
-  if(APP_SCRIPT_WEB_URL){$('google-card-description').textContent='Iniciá sesión con tu cuenta y elegí o creá una planilla. Cada persona usa sus propios archivos.';$('google-card-action').textContent='Conectar cuenta →'}
   document.querySelectorAll('[data-view]').forEach(el=>el.addEventListener('click',()=>showView(el.dataset.view)));
+  const moreToggle=$('nav-more-toggle'),moreMenu=$('nav-more-menu');
+  moreToggle.addEventListener('click',()=>{const opening=moreMenu.classList.contains('hidden');moreMenu.classList.toggle('hidden',!opening);moreToggle.setAttribute('aria-expanded',String(opening))});
+  document.addEventListener('click',event=>{if(!moreMenu.contains(event.target)&&!moreToggle.contains(event.target)){moreMenu.classList.add('hidden');moreToggle.setAttribute('aria-expanded','false')}});
+  document.addEventListener('keydown',event=>{if(event.key==='Escape'){moreMenu.classList.add('hidden');moreToggle.setAttribute('aria-expanded','false')}});
   $('brand-home').addEventListener('click',()=>showView('home'));
   const theme=localStorage.getItem('ventas-theme')==='dark'?'dark':'light';setTheme(theme);
   $('theme-button').addEventListener('click',()=>setTheme(document.body.classList.contains('dark')?'light':'dark'));
   $('settings-button').addEventListener('click',()=>{if(state.busy)return;if(editingSale)resetSaleForm();if(state.token){showView('setup');return}localStorage.removeItem('ventas-google-session');state.mode=null;sourceStatus();showView('source')});
   $('google-signout').addEventListener('click',()=>{if(state.busy)return;localStorage.removeItem('ventas-google-session');state.token=null;state.userId=null;state.mode=null;state.sheetId='';state.book=null;state.fileName='';state.sheets=[];state.rows.clear();state.sales=[];sourceStatus();updateGoogleSessionUI();showView('setup');toast('Sesión de Google cerrada.')});
   $('choose-google').addEventListener('click',()=>showView('setup'));$('choose-local').addEventListener('click',()=>showView('local'));$('pending-local').addEventListener('click',()=>showView('local'));
-  $('script-connect').href=APP_SCRIPT_WEB_URL;$('direct-pending').classList.toggle('hidden',!!APP_GOOGLE_CLIENT_ID);$('direct-connect').disabled=!APP_GOOGLE_CLIENT_ID;
+  $('direct-pending').classList.toggle('hidden',!!APP_GOOGLE_CLIENT_ID);$('direct-connect').disabled=!APP_GOOGLE_CLIENT_ID;
   $('direct-connect').addEventListener('click',connectGoogle);$('direct-open').addEventListener('click',()=>chooseGoogleBook($('drive-sheet-select').value).catch(error=>toast(error.message,true)));$('direct-create').addEventListener('click',createGoogleBook);
   $('open-local').addEventListener('click',openLocal);$('create-local').addEventListener('click',createLocal);$('download-excel').addEventListener('click',()=>downloadLocal().catch(error=>toast(error.message,true)));
   $('apply-sheet-style').addEventListener('click',async()=>{if(state.busy)return;state.busy=true;$('apply-sheet-style').disabled=true;try{const ok=await refresh({forceAll:true});toast(ok?'Diseño aplicado a la planilla.':'Revisá el mensaje de diseño en Inicio.',!ok)}catch(error){styleStatus(`No se pudo aplicar el diseño: ${error.message}`,true);toast(error.message,true)}finally{state.busy=false;$('apply-sheet-style').disabled=false}});

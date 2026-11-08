@@ -7,7 +7,7 @@
   <meta name="description" content="Registro y consulta de ventas de prepagas conectado con Google Sheets.">
   <title>Ventas de prepagas</title>
   <link rel="stylesheet" href="vendor/flatpickr.min.css">
-  <link rel="stylesheet" href="styles.css?v=20261106capitas">
+  <link rel="stylesheet" href="styles.css?v=20261108nav">
   <script>
     try {
       const session=JSON.parse(localStorage.getItem('ventas-google-session')||'null');
@@ -33,7 +33,7 @@
   <script src="omint-logo-data.js" defer></script>
   <script src="omint-pdf.js?v=20261106download" defer></script>
   <script src="omint-quote.js?v=20261106download" defer></script>
-  <script src="app.js?v=20261106pdfimport" defer></script>
+  <script src="app.js?v=20261108nav" defer></script>
 </head>
 <body>
   <div id="startup-loading" class="startup-loading" role="status" aria-live="polite"><div class="startup-loading-card"><span class="startup-loading-brand">claros<span>.</span></span><span class="startup-spinner" aria-hidden="true"></span><strong id="startup-title">Preparando tu espacio</strong><p id="startup-message">Estamos recuperando tu sesión y tu planilla.</p><a class="startup-retry" href="">Volver a cargar</a></div></div>
@@ -44,12 +44,18 @@
       <div class="nav-label">ESPACIO DE TRABAJO</div>
       <nav id="main-navigation" aria-label="Navegación principal">
         <button class="nav-item active" data-view="home"><span>▦</span> Inicio</button>
-        <button class="nav-item" data-view="add"><span>＋</span> Cargar venta</button>
+        <button class="nav-item desktop-nav-item" data-view="add"><span>＋</span> Cargar venta</button>
         <button class="nav-item" data-view="search"><span>⌕</span> Buscar ventas</button>
         <button class="nav-item" data-view="calculator"><span>∑</span> Calculadora</button>
-        <button class="nav-item" data-view="quote"><span>◇</span> Cotización</button>
-        <button class="nav-item" data-view="create"><span>▤</span> Modificar prepagas</button>
+        <button class="nav-item desktop-nav-item" data-view="quote"><span>◇</span> Cotización</button>
+        <button class="nav-item desktop-nav-item" data-view="create"><span>▤</span> Modificar prepagas</button>
+        <div class="nav-more-menu phone-nav-item hidden" id="nav-more-menu" aria-label="Más opciones">
+          <button class="nav-item" data-view="add"><span>＋</span> Cargar venta</button>
+          <button class="nav-item" data-view="quote"><span>◇</span> Cotización</button>
+          <button class="nav-item" data-view="create"><span>▤</span> Modificar prepagas</button>
+        </div>
       </nav>
+      <button class="nav-more-toggle phone-nav-item" id="nav-more-toggle" type="button" aria-label="Más opciones" aria-expanded="false" aria-controls="nav-more-menu">＋</button>
       <div class="sidebar-bottom"><div class="status-dot"></div><div><strong id="sidebar-status">Sin archivo</strong><small id="sidebar-sub">Elegí Google Drive o Excel local</small></div></div>
     </aside>
 
@@ -60,7 +66,7 @@
           <div class="eyebrow">BIENVENIDO</div><h1 id="source-title">¿Dónde querés guardar tus ventas<span class="accent">?</span></h1><p class="lead">Elegí tu propio Google Drive para usar la planilla desde cualquier dispositivo, o trabajá con un Excel en este dispositivo.</p>
           <div class="source-grid"><button id="choose-google" class="source-card"><span class="source-icon">☁</span><strong>Conectar Google Drive</strong><span id="google-card-description">La conexión simple de Google está en preparación. Cada persona usará su propia cuenta.</span><b id="google-card-action">Ver estado →</b></button><button id="choose-local" class="source-card"><span class="source-icon local-icon">▤</span><strong>Usar Excel local</strong><span>Abrí un archivo .xlsx de tu dispositivo o creá uno nuevo. Guardá los cambios descargando el Excel.</span><b>Elegir Excel →</b></button></div>
         </section>
-        <section id="setup-view" class="view hidden" aria-labelledby="setup-title"><div class="eyebrow">GOOGLE DRIVE</div><h1 id="setup-title">Conectar Google</h1><p class="lead">Elegí cómo entrar a tus planillas.</p><div class="source-grid"><div class="panel"><h2>Inicio directo</h2><p class="muted">Elegí tu cuenta de Google desde esta página.</p><div id="google-session" class="google-session hidden"><span>Sesión iniciada con Google.</span><button id="google-signout" class="button outline" type="button">Cerrar sesión</button></div><button id="direct-connect" class="button primary" type="button">Elegir cuenta de Google</button><p id="direct-pending" class="muted hidden">El inicio directo todavía necesita la configuración inicial del administrador.</p><div id="google-picker" class="hidden"><label>Planillas de ventasApp<select id="drive-sheet-select"></select></label><button id="direct-open" class="button outline" type="button">Abrir planilla</button><label>Nombre del archivo nuevo<input id="new-book-name" value="Ventas de prepagas" maxlength="120"></label><button id="direct-create" class="button primary" type="button">Crear archivo</button></div></div><div class="panel"><h2>Google Apps Script</h2><p class="muted">Usá la conexión que ya tenés configurada.</p><a id="script-connect" class="button primary" href="#">Abrir aplicación actual →</a></div></div><p><button id="pending-local" class="button outline" type="button">Usar Excel local</button></p></section>
+        <section id="setup-view" class="view hidden" aria-labelledby="setup-title"><div class="eyebrow">GOOGLE DRIVE</div><h1 id="setup-title">Conectar Google</h1><p class="lead">Elegí cómo entrar a tus planillas.</p><div class="source-grid"><div class="panel"><h2>Inicio directo</h2><p class="muted">Elegí tu cuenta de Google desde esta página.</p><div id="google-session" class="google-session hidden"><span>Sesión iniciada con Google.</span><button id="google-signout" class="button outline" type="button">Cerrar sesión</button></div><button id="direct-connect" class="button primary" type="button">Elegir cuenta de Google</button><p id="direct-pending" class="muted hidden">El inicio directo todavía necesita la configuración inicial del administrador.</p><div id="google-picker" class="hidden"><label>Planillas de ventasApp<select id="drive-sheet-select"></select></label><button id="direct-open" class="button outline" type="button">Abrir planilla</button><label>Nombre del archivo nuevo<input id="new-book-name" value="Ventas de prepagas" maxlength="120"></label><button id="direct-create" class="button primary" type="button">Crear archivo</button></div></div></div><p><button id="pending-local" class="button outline" type="button">Usar Excel local</button></p></section>
         <section id="local-view" class="view hidden" aria-labelledby="local-title"><div class="eyebrow">EXCEL LOCAL</div><h1 id="local-title">Tu Excel en este dispositivo<span class="accent">.</span></h1><p class="lead">Abrí un archivo .xlsx existente o creá uno nuevo. Los datos se procesan en este navegador.</p><div class="source-grid"><div class="panel local-panel"><span class="source-icon local-icon">▤</span><h2>Abrir un Excel</h2><p class="muted">Elegí el archivo desde tu dispositivo. El original no se cambia automáticamente.</p><input id="local-file" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"><button id="open-local" class="button primary" type="button">Abrir archivo</button></div><div class="panel local-panel"><span class="source-icon">＋</span><h2>Crear un Excel</h2><p class="muted">Comenzá con una planilla nueva y agregá las prepagas que necesites.</p><input id="local-book-name" type="text" value="Ventas de prepagas" aria-label="Nombre del nuevo Excel"><button id="create-local" class="button primary" type="button">Crear Excel</button></div></div><p class="local-note">En modo local, después de cada cambio se descargará el Excel actualizado. Conservá la última versión descargada.</p></section>
 
         <section id="home-view" class="view hidden" aria-labelledby="home-title"><div class="eyebrow">TU ESPACIO DE VENTAS</div><div class="heading-row"><div><h1 id="home-title">Todo en un mismo lugar<span class="accent">.</span></h1><p class="lead">Cargá nuevas ventas, encontrá registros y organizá tus prepagas.</p></div><button class="button outline" id="refresh-button" type="button">↻ Actualizar</button></div>
