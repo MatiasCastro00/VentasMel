@@ -36,7 +36,7 @@ function updateSuggestedAlta(){if(!altaManuallyChanged){const form=$('sale-form'
 function setTheme(theme){const dark=theme==='dark';document.body.classList.toggle('dark',dark);$('theme-button').textContent=dark?'☀ Modo claro':'☾ Modo oscuro';$('theme-button').setAttribute('aria-label',dark?'Activar modo claro':'Activar modo oscuro');$('theme-button').setAttribute('aria-pressed',String(dark));localStorage.setItem('ventas-theme',theme)}
 
 function toast(message,error=false){const el=$('toast');el.textContent=message;el.classList.toggle('error',error);el.classList.remove('hidden');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.add('hidden'),5500)}
-function updateGoogleSessionUI(){if(!$('google-session'))return;const connected=!!state.token;$('google-session').classList.toggle('hidden',!connected);$('direct-connect').classList.toggle('hidden',connected);$('direct-pending').classList.toggle('hidden',!!APP_GOOGLE_CLIENT_ID||connected);$('settings-button').textContent=connected?'Cuenta Google':'Cambiar archivo';if(!connected)$('google-picker').classList.add('hidden')}
+function updateGoogleSessionUI(){if(!$('google-session'))return;const connected=!!state.token;$('google-session').classList.toggle('hidden',!connected);$('direct-connect').classList.toggle('hidden',connected);$('direct-pending').classList.toggle('hidden',!!APP_GOOGLE_CLIENT_ID||connected);$('settings-button').textContent=connected?'Cambiar de cuenta':'Cambiar archivo';if(!connected)$('google-picker').classList.add('hidden')}
 function showView(view){
   if(!state.mode&&!['source','setup','local'].includes(view))view='source';
   document.querySelectorAll('.view').forEach(el=>el.classList.add('hidden'));
@@ -46,7 +46,10 @@ function showView(view){
   const moreMenu=$('nav-more-menu'),moreToggle=$('nav-more-toggle');
   moreMenu.classList.add('hidden');moreToggle.setAttribute('aria-expanded','false');moreToggle.classList.toggle('active',['add','quote','create'].includes(view));
   document.querySelectorAll('.nav-item').forEach(el=>el.classList.toggle('active',el.dataset.view===view));
-  $('breadcrumb-current').textContent=({source:'ELEGIR ARCHIVO',setup:'GOOGLE DRIVE',local:'EXCEL LOCAL',home:'INICIO',add:'CARGAR VENTA',search:'BUSCAR VENTAS',calculator:'CALCULADORA',quote:'COTIZACIÓN',create:'MODIFICAR PREPAGAS'})[view];
+  $('breadcrumb-section').textContent=['source','setup','local'].includes(view)?'SELECCIÓN DE ARCHIVO':'VENTAS';
+  $('breadcrumb-separator').classList.toggle('hidden',view==='source');
+  $('breadcrumb-current').classList.toggle('hidden',view==='source');
+  $('breadcrumb-current').textContent=({source:'',setup:'GOOGLE DRIVE',local:'EXCEL LOCAL',home:'INICIO',add:'CARGAR VENTA',search:'BUSCAR VENTAS',calculator:'CALCULADORA',quote:'COTIZACIÓN',create:'MODIFICAR PREPAGAS'})[view];
   updateGoogleSessionUI();
   if(view==='search')renderResults();
   if(view==='create')renderPrepagas();
@@ -319,6 +322,7 @@ function init(){
   document.addEventListener('click',event=>{if(!moreMenu.contains(event.target)&&!moreToggle.contains(event.target)){moreMenu.classList.add('hidden');moreToggle.setAttribute('aria-expanded','false')}});
   document.addEventListener('keydown',event=>{if(event.key==='Escape'){moreMenu.classList.add('hidden');moreToggle.setAttribute('aria-expanded','false')}});
   $('brand-home').addEventListener('click',()=>showView('home'));
+  $('topbar-brand-home').addEventListener('click',()=>showView('home'));
   const theme=localStorage.getItem('ventas-theme')==='dark'?'dark':'light';setTheme(theme);
   $('theme-button').addEventListener('click',()=>setTheme(document.body.classList.contains('dark')?'light':'dark'));
   $('settings-button').addEventListener('click',()=>{if(state.busy)return;if(editingSale)resetSaleForm();if(state.token){showView('setup');return}localStorage.removeItem('ventas-google-session');state.mode=null;sourceStatus();showView('source')});
