@@ -1,0 +1,28 @@
+PULSOGESTIÓN — BRAND KIT COMPLETO · V3
+Nombre provisional: PulsoGestión.
+
+La figura conserva el ícono corregido seleccionado: tres columnas centradas por cinco filas de celdas de hoja de cálculo atravesadas por un pulso blanco. NO es una letra A.
+
+ARCHIVOS PRINCIPALES
+icono-principal.svg y los PNG icono-1024.png...icono-32.png: versión estándar para la aplicación.
+logo-horizontal.svg: uso sobre fondos claros.
+guia-de-marca.pdf: manual de 6 páginas, ahora incluye la sección de variantes de alto contraste y el uso de fondos.
+catalogo-de-variantes.png: vista rápida de nueve versiones.
+
+CARPETA variantes/
+icono-claro-color: aplicación estándar, fondo claro.
+icono-oscuro-inverso: placa clara para fondos oscuros.
+icono-oscuro-profundo: placa azul petróleo profundo para fondos oscuros.
+icono-blanco-negro e icono-negro-blanco: blanco y negro puro.
+icono-escala-grises: copias/documentos sin color.
+simbolo-verde-transparente: solo símbolo sin fondo sobre superficies claras.
+simbolo-blanco-transparente: solo símbolo sin fondo sobre superficies oscuras.
+simbolo-negro-transparente: solo símbolo sin fondo, impresión monocroma.
+simbolo-gris-transparente: versión secundaria, papelería.
+logo-horizontal-color-claro y logo-horizontal-color-oscuro: logotipos color para distintas superficies.
+logo-horizontal-blanco, logo-horizontal-negro y logo-horizontal-verde: logotipos planos sin fondo.
+
+Usar el color blanco sobre superficies lo bastante oscuras; negro/verde oscuro sobre superficies claras. No colocar texto verde petróleo sobre verde oscuro.
+No cambiar proporciones, orientación, cantidad de celdas o ancho del pulso. Mantener margen exterior alrededor del ícono.
+Todos los archivos SVG son editables y todos los PNG de símbolos sin fondo conservan transparencia.
+Nombre, concepto e identidad no registrados: verificar disponibilidad de marca antes de publicar.

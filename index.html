@@ -3,11 +3,15 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#0e2842">
-  <meta name="description" content="Registro y consulta de ventas de prepagas conectado con Google Sheets.">
-  <title>Ventas de prepagas</title>
+  <meta name="theme-color" content="#0B333A">
+  <meta name="description" content="PulsoGestión: organizá clientes, altas, cotizaciones y comisiones de medicina prepaga.">
+  <title>PulsoGestión · Clientes, altas y comisiones</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="branding/icono-32.png">
+  <link rel="icon" type="image/png" sizes="64x64" href="branding/icono-64.png">
+  <link rel="icon" type="image/svg+xml" href="branding/icono-principal.svg">
+  <link rel="apple-touch-icon" sizes="180x180" href="branding/icono-256.png">
   <link rel="stylesheet" href="vendor/flatpickr.min.css">
-  <link rel="stylesheet" href="styles.css?v=20261108nav">
+  <link rel="stylesheet" href="styles.css?v=20261109pulso">
   <script>
     try {
       const session=JSON.parse(localStorage.getItem('ventas-google-session')||'null');
@@ -36,11 +40,11 @@
   <script src="app.js?v=20261108nav" defer></script>
 </head>
 <body>
-  <div id="startup-loading" class="startup-loading" role="status" aria-live="polite"><div class="startup-loading-card"><span class="startup-loading-brand">claros<span>.</span></span><span class="startup-spinner" aria-hidden="true"></span><strong id="startup-title">Preparando tu espacio</strong><p id="startup-message">Estamos recuperando tu sesión y tu planilla.</p><a class="startup-retry" href="">Volver a cargar</a></div></div>
+  <div id="startup-loading" class="startup-loading" role="status" aria-live="polite"><div class="startup-loading-card"><span class="brand-icon startup-logo" aria-hidden="true"></span><span class="startup-loading-brand">PulsoGestión</span><span class="startup-spinner" aria-hidden="true"></span><strong id="startup-title">Preparando tu espacio</strong><p id="startup-message">Estamos recuperando tu sesión y tu planilla.</p><a class="startup-retry" href="">Volver a cargar</a></div></div>
   <noscript>Activá JavaScript para usar la aplicación.</noscript>
   <div class="shell" inert>
     <aside class="sidebar">
-      <button class="brand" id="brand-home" type="button" aria-label="Claros: ir al inicio"><span class="brand-mark">✦</span><span>claros<span class="brand-dot">.</span><small>VENTAS DE PREPAGAS</small></span></button>
+      <button class="brand" id="brand-home" type="button" aria-label="PulsoGestión: ir al inicio"><span class="brand-icon" aria-hidden="true"></span><span class="brand-name">Pulso<span>Gestión</span><small>CLIENTES · ALTAS · COMISIONES</small></span></button>
       <div class="nav-label">ESPACIO DE TRABAJO</div>
       <nav id="main-navigation" aria-label="Navegación principal">
         <button class="nav-item active" data-view="home"><span>▦</span> Inicio</button>
@@ -60,7 +64,7 @@
     </aside>
 
     <main class="main">
-      <header class="topbar"><div class="topbar-start"><button class="topbar-brand" id="topbar-brand-home" type="button" aria-label="Claros: ir al inicio"><span class="brand-mark">✦</span><span>claros<span class="brand-dot">.</span><small>VENTAS DE PREPAGAS</small></span></button><div class="breadcrumb"><span id="breadcrumb-section">SELECCIÓN DE ARCHIVO</span><span id="breadcrumb-separator" class="hidden">/</span><strong id="breadcrumb-current" class="hidden"></strong></div></div><div class="top-actions"><span class="sync-indicator" id="sync-indicator">● Sin archivo</span><button class="link-button" id="theme-button" type="button" aria-label="Activar modo oscuro" aria-pressed="false">☾ Modo oscuro</button><button class="link-button" id="settings-button" type="button">Cambiar archivo</button></div></header>
+      <header class="topbar"><div class="topbar-start"><button class="topbar-brand" id="topbar-brand-home" type="button" aria-label="PulsoGestión: ir al inicio"><span class="brand-icon" aria-hidden="true"></span><span class="brand-name">Pulso<span>Gestión</span><small>CLIENTES · ALTAS · COMISIONES</small></span></button><div class="breadcrumb"><span id="breadcrumb-section">SELECCIÓN DE ARCHIVO</span><span id="breadcrumb-separator" class="hidden">/</span><strong id="breadcrumb-current" class="hidden"></strong></div></div><div class="top-actions"><span class="sync-indicator" id="sync-indicator">● Sin archivo</span><button class="link-button" id="theme-button" type="button" aria-label="Activar modo oscuro" aria-pressed="false">☾ Modo oscuro</button><button class="link-button" id="settings-button" type="button">Cambiar archivo</button></div></header>
       <div class="content">
         <section id="source-view" class="view" aria-labelledby="source-title">
           <div class="eyebrow">BIENVENIDO</div><h1 id="source-title">¿Dónde querés guardar tus ventas<span class="accent">?</span></h1><p class="lead">Elegí tu propio Google Drive para usar la planilla desde cualquier dispositivo, o trabajá con un Excel en este dispositivo.</p>

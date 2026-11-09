@@ -1,6 +1,8 @@
-# Ventas de prepagas
+# PulsoGestión
 
 Aplicación web para registrar ventas con Google Drive o un Excel local.
+
+Identidad visual: clientes, altas y comisiones en orden. El kit completo de marca está en `branding/`.
 
 Para publicar, elegir en GitHub Settings → Pages → Deploy from a branch, rama `main` y carpeta `/ (root)`.
 
