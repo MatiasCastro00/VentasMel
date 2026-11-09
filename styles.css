@@ -240,3 +240,4 @@ body.nav-hidden .topbar-brand .brand-name{display:none}
 .sidebar .brand-icon{background-image:url('branding/variantes/icono-oscuro-inverso.png')}
 body.dark .brand-icon{background-image:url('branding/variantes/icono-oscuro-profundo.png')}
 body.dark .sidebar .brand-icon{background-image:url('branding/variantes/icono-oscuro-profundo.png')}
+.sidebar .brand{justify-content:center;padding-left:0;padding-right:0}
