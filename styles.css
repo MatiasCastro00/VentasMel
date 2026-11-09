@@ -154,7 +154,7 @@ html:not(.restoring-session):not(.startup-failed) .startup-loading{display:none}
 .sidebar .nav-label{padding-bottom:9px}
 .sidebar .nav-item{padding:9px 15px;font-size:13px}
 .sidebar .nav-item{position:relative;overflow:hidden;transition:background-color .18s ease,color .18s ease,transform .18s ease}
-.sidebar .nav-item.active:before{left:0;top:7px;height:calc(100% - 14px);margin:0;transform:scaleY(.55);transform-origin:center;transition:transform .18s ease}
+.sidebar .nav-item.active:before{left:0;top:0;height:100%;margin:0;transform:scaleY(1);transform-origin:center;transition:transform .18s ease}
 .sidebar .nav-item.active{animation:nav-grow .28s ease-out}
 @keyframes nav-grow{0%{transform:scale(1)}55%{transform:scale(1.045)}100%{transform:scale(1)}}
 @media(prefers-reduced-motion:reduce){.sidebar .nav-item,.sidebar .nav-item.active:before{transition:none}.sidebar .nav-item.active{animation:none}}
