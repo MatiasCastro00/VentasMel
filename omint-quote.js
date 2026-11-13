@@ -14,7 +14,27 @@ document.addEventListener('DOMContentLoaded',()=>{
   };
   const options=(select,placeholder,values)=>select.replaceChildren(new Option(placeholder,''),...values.map(value=>new Option(value,value)));
   const money=value=>new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS',maximumFractionDigits:0}).format(value);
-  const selectedPlans=()=>OMINT_DATA.groups[groupFor(province.value)]||[];
+  const selectedPlans=()=>province.value?(OMINT_DATA.groups[groupFor(province.value)]||[]):[];
+  let renderedProvince='',renderedCategory='';
+  function syncSelectors(){
+    const provinceChanged=renderedProvince!==province.value;
+    if(provinceChanged){
+      const previous=category.value,categories=[...new Set(selectedPlans().map(item=>item.category))];
+      options(category,categories.length?'Elegí un tipo':'No hay tipos disponibles',categories);
+      if(categories.includes(previous))category.value=previous;
+      renderedProvince=province.value;
+    }
+    category.disabled=!province.value||category.options.length<=1;
+    const categoryChanged=renderedCategory!==category.value;
+    if(provinceChanged||categoryChanged){
+      const previous=plan.value,plans=selectedPlans().filter(item=>item.category===category.value).map(item=>item.name);
+      options(plan,plans.length?'Elegí un plan':'No hay planes disponibles',plans);
+      if(plans.includes(previous))plan.value=previous;
+      renderedCategory=category.value;
+    }
+    plan.disabled=!category.value||plan.options.length<=1;
+    calculate();
+  }
   const addMember=()=>{
     const row=document.createElement('div');row.className='omint-member';
     const kind=document.createElement('select');kind.setAttribute('aria-label','Parentesco');kind.replaceChildren(new Option('Adulto / cónyuge / familiar','adult'),new Option('Hijo hasta 25 años inclusive','child'));
@@ -54,7 +74,10 @@ document.addEventListener('DOMContentLoaded',()=>{
   }
   async function generatePdf(){if(!quote)return;try{await downloadOmintPdf(quote,$('quote-client-name').value)}catch(error){console.error(error);alert('No se pudo generar el PDF. Volvé a intentarlo.')}}
   options(province,'Elegí una provincia',OMINT_DATA.provinces);
-  province.addEventListener('change',()=>{options(category,'Elegí un tipo',[...new Set(selectedPlans().map(item=>item.category))]);category.disabled=!province.value;options(plan,'Elegí un plan',[]);plan.disabled=true;calculate()});
-  category.addEventListener('change',()=>{options(plan,'Elegí un plan',selectedPlans().filter(item=>item.category===category.value).map(item=>item.name));plan.disabled=!category.value;calculate()});
+  for(const event of ['input','change']){province.addEventListener(event,syncSelectors);category.addEventListener(event,syncSelectors)}
+  // El navegador puede restaurar valores sin emitir change al volver a la página.
+  window.addEventListener('pageshow',syncSelectors);
+  category.addEventListener('focus',syncSelectors);plan.addEventListener('focus',syncSelectors);
+  syncSelectors();
   plan.addEventListener('change',calculate);$('quote-add-member').addEventListener('click',addMember);$('quote-add-discount').addEventListener('click',()=>addDiscount());pdfButton.addEventListener('click',generatePdf);saleButton.addEventListener('click',()=>{if(quote)document.dispatchEvent(new CustomEvent('omint:load-sale',{detail:{quote:{...quote,reductions:quote.reductions.map(item=>({...item}))},name:$('quote-client-name').value.trim()}}))});addDiscount(true);
 });
