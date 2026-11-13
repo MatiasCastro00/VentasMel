@@ -241,3 +241,6 @@ body.nav-hidden .topbar-brand .brand-name{display:none}
 body.dark .brand-icon{background-image:url('branding/variantes/icono-oscuro-profundo.png')}
 body.dark .sidebar .brand-icon{background-image:url('branding/variantes/icono-oscuro-profundo.png')}
 .sidebar .brand{justify-content:center;padding-left:0;padding-right:0}
+
+/* Perfil líder y apariencia */
+.theme-toggle{display:grid;place-items:center;width:38px;height:38px;flex:none;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);font-size:20px;line-height:1;cursor:pointer}.theme-toggle:hover{border-color:var(--teal);color:var(--teal-dark)}.theme-toggle:focus-visible,#profile-switch:focus-visible{outline:3px solid var(--teal);outline-offset:2px}body.dark .theme-toggle{background:#193247;color:var(--ink);border-color:var(--line)}.leader-monthly{padding:22px;margin-bottom:18px}.leader-monthly input{max-width:240px}.leader-monthly p{margin:12px 0 0}@media(max-width:760px){.theme-toggle{width:34px;height:34px;font-size:18px}.top-actions{max-width:none}.topbar-start{min-width:0}.breadcrumb{white-space:nowrap}}
