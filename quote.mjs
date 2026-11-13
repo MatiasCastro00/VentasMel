@@ -17,8 +17,8 @@ function parseAvalian(lines) {
   for (const text of lines) {
     const normalized = plain(text);
     if (normalized.startsWith('NOMBRE DEL TITULAR:')) result.name = String(text).replace(/^\s*Nombre\s+del\s+titular\s*:\s*/i, '').split(/\s+Fecha\s*:/i)[0].trim();
-    if (normalized.startsWith('PLAN A COTIZAR:')) {
-      result.plan = String(text).replace(/^\s*Plan\s+a\s+cotizar\s*:\s*/i, '').trim();
+    if (/\bPLAN A COTIZAR\s*:/.test(normalized)) {
+      result.plan = String(text).replace(/^.*?\bPlan\s+a\s+cotizar\s*:\s*/i, '').trim();
       inPrices = true;
     } else if (inPrices && normalized.startsWith('PRECIO TOTAL')) result.value = amount(text);
     else if (inPrices && normalized.startsWith('BONIFICACION ')) {
@@ -51,7 +51,12 @@ function parseOmint(lines) {
 
 export function parseQuoteLines(lines) {
   if (lines.some(text => plain(text).includes('OMINT')) && lines.some(text => plain(text).startsWith('VALOR DEL PLAN'))) return parseOmint(lines);
-  if (lines.some(text => plain(text).startsWith('PLAN A COTIZAR:')) && lines.some(text => plain(text).startsWith('PRECIO TOTAL'))) return parseAvalian(lines);
+  if (lines.some(text => /\bPLAN A COTIZAR\s*:/.test(plain(text))) && lines.some(text => plain(text).startsWith('PRECIO TOTAL'))) return parseAvalian(lines);
+  if (!lines.some(text => plain(text).startsWith('COTIZACION DE ')) ||
+      !lines.some(text => plain(text).startsWith('DETALLE ')) ||
+      !lines.some(text => plain(text).startsWith('VALOR DE PLAN'))) {
+    throw new Error('Formato de cotización no encontrado. Usá una cotización compatible de Sancor, Avalian u Omint.');
+  }
   const result = { provider: 'Sancor', name: '', plan: '', value: null, discounts: [] };
   for (const text of lines) {
     const normalized = plain(text);
@@ -63,7 +68,7 @@ export function parseQuoteLines(lines) {
       if (value !== null) result.discounts.push(Math.abs(value));
     }
   }
-  if (!result.name && !result.plan && result.value === null) throw new Error('No se reconoció una cotización compatible en el PDF.');
+  if (!result.name || !result.plan || result.value === null) throw new Error('No se pudieron leer nombre, plan y valor de la cotización de Sancor.');
   return result;
 }
 
