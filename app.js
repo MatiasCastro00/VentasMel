@@ -242,8 +242,8 @@ async function loadOmintQuoteAsSale(event){
   const {quote,name}=event.detail;if(state.busy||!quote||!state.mode)return;
   let sheet=state.sheets.find(item=>item.title.toLocaleLowerCase()==='omint');
   if(!sheet){$('new-sheet-name').value='Omint';await createSheet({preventDefault(){}});sheet=state.sheets.find(item=>item.title.toLocaleLowerCase()==='omint');if(!sheet)return}
-  resetSaleForm();const form=$('sale-form');form.elements.prepaga.value=sheet.title;form.elements.capitas.value=String(quote.count);form.elements.plan.value=`Omint ${quote.plan} (${quote.province})`;form.elements.valor.value=String(quote.base);form.elements.nombre.value=name;
-  $('discount-list').replaceChildren();let used=0;quote.reductions.forEach((item,index)=>{const amount=index===quote.reductions.length-1?quote.base-quote.total-used:Math.round(quote.base*item.percent)/100;used+=amount;addDiscount(String(Math.round(amount*100)/100))});
+  resetSaleForm();const form=$('sale-form');form.elements.prepaga.value=sheet.title;form.elements.capitas.value=String(quote.count);form.elements.plan.value=`Omint ${quote.plan} (${quote.province})`;form.elements.valor.value=String(quote.base+(quote.iva||0));form.elements.nombre.value=name;
+  $('discount-list').replaceChildren();let used=0;quote.reductions.forEach((item,index)=>{const amount=index===quote.reductions.length-1?quote.base-(quote.subtotal??quote.total)-used:Math.round(quote.base*item.percent)/100;used+=amount;addDiscount(String(Math.round(amount*100)/100))});
   $('quote-status').textContent=`Cotización Omint de ${quote.province} cargada: ${quote.count} cápitas y ${quote.reductions.length} descuento${quote.reductions.length===1?'':'s'}. Completá los datos del cliente y revisá el importe antes de guardar.`;
   updateGain();showView('add');
 }

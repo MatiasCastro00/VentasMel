@@ -16,8 +16,9 @@ async function downloadOmintPdf(quote, clientName) {
   heading('Integrantes');quote.people.forEach((person,i)=>row(`${i+1}. ${person.kind==='child'?'Hijo hasta 25 años':'Adulto / familiar'} · ${person.age} años`,quote.detail[i]));
   heading('Detalle de cotización');row(`Valor del plan (${quote.count} cápitas)`,quote.base);
   quote.reductions.forEach(item=>row(`${item.name} (${item.percent}%)`, -Math.round(quote.base*item.percent/100)));
+  if(quote.ivaRate){row('Subtotal con descuentos',quote.subtotal);row('IVA (10,5 %)',quote.iva)}
   ensure(45);page.drawRectangle({x:45,y:y-12,width:505,height:28,color:rgb(.91,.93,.97)});text('TOTAL A PAGAR',52,13,bold);const total=format(quote.total);text(total,540-bold.widthOfTextAtSize(total,13),13,bold);y-=42;
-  const notes=['Los descuentos se calculan sobre el valor base del plan.','Precios Omint Empresas vigentes a noviembre de 2026.','Los importes no incluyen IVA aplicable a socios directos.','La cotización está sujeta a cambios y condiciones comerciales.'];
+  const notes=['Los descuentos se calculan sobre el valor base del plan.','Precios Omint Empresas vigentes a noviembre de 2026.',quote.ivaRate?'El total incluye IVA del 10,5 %.':'Los importes no incluyen IVA aplicable a socios directos.','La cotización está sujeta a cambios y condiciones comerciales.'];
   for(const note of notes){ensure(15);text(note,45,9,font,muted);y-=14}
   const bytes=await doc.save(), url=URL.createObjectURL(new Blob([bytes],{type:'application/pdf'})), link=document.createElement('a');link.href=url;link.download=`${filename}.pdf`;document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
 }
