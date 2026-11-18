@@ -15,6 +15,7 @@ const APP_ASSET_BASE=new URL('.',document.currentScript?.src||document.querySele
 const $=id=>document.getElementById(id);
 const state={profile:'seller',canLead:false,mode:null,token:null,clientId:'',sheetId:'',book:null,fileName:'',sheets:[],rows:new Map(),sales:[],busy:false};
 const formattedGoogleSheets=new Set();
+let teamSellers=[];
 let toastTimer, startupAbort;
 let altaManuallyChanged=false;
 let editingSale=null;
@@ -28,7 +29,7 @@ function initDateRangePair(fromInput,toInput){if(!fromInput||!toInput||fromInput
 function renderCustomRangeCalendar(pair){clearTimeout(pair.tooltipTimer);clearTimeout(pair.tooltipRemoveTimer);pair.tooltip?.remove();pair.tooltip=null;const formatter=new Intl.DateTimeFormat('es-AR',{month:'long',year:'numeric'}),weekdays=['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];pair.popup.replaceChildren();pair.months.forEach((month,index)=>{const pane=document.createElement('section');pane.className='custom-range-month';const header=document.createElement('header');const previous=document.createElement('button'),title=document.createElement('strong'),next=document.createElement('button');previous.type=next.type='button';previous.className=next.className='month-nav';previous.textContent='‹';next.textContent='›';title.textContent=formatter.format(month);previous.setAttribute('aria-label','Mes anterior');next.setAttribute('aria-label','Mes siguiente');previous.addEventListener('click',()=>{pair.preview='';pair.months[index]=new Date(month.getFullYear(),month.getMonth()-1,1);renderCustomRangeCalendar(pair)});next.addEventListener('click',()=>{pair.preview='';pair.months[index]=new Date(month.getFullYear(),month.getMonth()+1,1);renderCustomRangeCalendar(pair)});header.append(previous,title,next);const grid=document.createElement('div');grid.className='custom-range-grid';weekdays.forEach(day=>{const cell=document.createElement('span');cell.className='weekday';cell.textContent=day;grid.append(cell)});const first=new Date(month.getFullYear(),month.getMonth(),1),offset=(first.getDay()+6)%7,begin=new Date(first.getFullYear(),first.getMonth(),1-offset);for(let i=0;i<42;i++){const date=new Date(begin.getFullYear(),begin.getMonth(),begin.getDate()+i),iso=formatLocalISO(date),day=document.createElement('button');day.type='button';day.className='calendar-day';day.dataset.date=iso;day.textContent=String(date.getDate());if(date.getMonth()!==month.getMonth())day.classList.add('other-month');day.addEventListener('click',()=>selectCustomRangeDate(pair,iso));grid.append(day)}pane.append(header,grid);pair.popup.append(pane)});const clear=document.createElement('button');clear.type='button';clear.className='calendar-clear';clear.textContent='Reiniciar período';clear.addEventListener('click',()=>{pair.start='';pair.end='';pair.preview='';pair.fromInput.value='';pair.toInput.value='';pair.fromVisible.value='';pair.toVisible.value='';pair.fromInput.dispatchEvent(new Event('change',{bubbles:true}));pair.toInput.dispatchEvent(new Event('change',{bubbles:true}));pair.fromInput.dispatchEvent(new Event('input',{bubbles:true}));pair.toInput.dispatchEvent(new Event('input',{bubbles:true}));renderCustomRangeCalendar(pair);pair.popup.classList.add('hidden')});pair.popup.append(clear);updateCustomRangePreview(pair,pair.preview||'')}
 function showRangeDayCount(pair,day){if(!pair.start)return;clearTimeout(pair.tooltipRemoveTimer);const first=Date.parse(`${pair.start}T00:00:00Z`),hover=Date.parse(`${day.dataset.date}T00:00:00Z`),count=Math.floor(Math.abs(hover-first)/86400000)+1;if(!pair.tooltip){pair.tooltip=document.createElement('div');pair.tooltip.className='range-day-count';pair.popup.append(pair.tooltip)}pair.tooltip.textContent=`${count} día${count===1?'':'s'}`;pair.tooltip.classList.remove('fade-out');const popupRect=pair.popup.getBoundingClientRect(),dayRect=day.getBoundingClientRect();pair.tooltip.style.left=`${dayRect.left-popupRect.left+dayRect.width/2}px`;pair.tooltip.style.top=`${Math.max(0,dayRect.top-popupRect.top-42)}px`;clearTimeout(pair.tooltipTimer);pair.tooltipTimer=setTimeout(()=>{if(!pair.tooltip)return;pair.tooltip.classList.add('fade-out');pair.tooltipRemoveTimer=setTimeout(()=>{pair.tooltip?.remove();pair.tooltip=null},450)},1800)}
 function updateCustomRangePreview(pair,preview){pair.preview=preview;const end=pair.end||preview,low=end&&end<pair.start?end:pair.start,high=end&&end<pair.start?pair.start:end;pair.popup.querySelectorAll('.calendar-day').forEach(day=>{const date=day.dataset.date;day.classList.toggle('in-range',!!end&&date>=low&&date<=high);day.classList.remove('range-start','range-end','range-pending');if(!end){if(date===pair.start)day.classList.add('range-start','range-pending')}else if(end===pair.start){if(date===pair.start)day.classList.add('range-start','range-end')}else{if(date===low)day.classList.add('range-start');if(date===high)day.classList.add('range-end')}});const summary=pair.fromInput.id==='search-alta-from'?$('search-date-range'):pair.fromInput.closest('.calculator-card')?.querySelector('[data-range-summary]');if(summary){summary.textContent=pair.start?`Período seleccionado: ${displayLocalDate(pair.start)} → ${displayLocalDate(end)||'sin fecha final'}`:'Todo el historial (sin límite de fechas)';summary.classList.toggle('has-range',!!pair.start)}}
-function selectCustomRangeDate(pair,value){if(!pair.start||pair.end){pair.start=value;pair.end=''}else if(value<pair.start){pair.end=pair.start;pair.start=value}else pair.end=value;pair.preview='';pair.fromInput.value=pair.start;pair.toInput.value=pair.end;pair.fromVisible.value=displayLocalDate(pair.start);pair.toVisible.value=displayLocalDate(pair.end);if(pair.fromInput.dataset.field){const sheet=pair.fromInput.closest('.calculator-card')?.dataset.sheet;if(sheet)calculatorSettings.set(sheet,{...calculatorSettings.get(sheet),altaFrom:pair.start,altaTo:pair.end})}pair.fromInput.dispatchEvent(new Event('input',{bubbles:true}));pair.toInput.dispatchEvent(new Event('input',{bubbles:true}));renderCustomRangeCalendar(pair);if(pair.end){pair.fromInput.dispatchEvent(new Event('change',{bubbles:true}));pair.toInput.dispatchEvent(new Event('change',{bubbles:true}));pair.popup.classList.add('hidden')}}
+function selectCustomRangeDate(pair,value){if(!pair.start||pair.end){pair.start=value;pair.end=''}else if(value<pair.start){pair.end=pair.start;pair.start=value}else pair.end=value;pair.preview='';pair.fromInput.value=pair.start;pair.toInput.value=pair.end;pair.fromVisible.value=displayLocalDate(pair.start);pair.toVisible.value=displayLocalDate(pair.end);if(pair.fromInput.dataset.field){const sheet=pair.fromInput.closest('.calculator-card')?.dataset.sheet;if(sheet){const settings=currentCalculatorSettings();settings.set(sheet,{...settings.get(sheet),altaFrom:pair.start,altaTo:pair.end})}}pair.fromInput.dispatchEvent(new Event('input',{bubbles:true}));pair.toInput.dispatchEvent(new Event('input',{bubbles:true}));renderCustomRangeCalendar(pair);if(pair.end){pair.fromInput.dispatchEvent(new Event('change',{bubbles:true}));pair.toInput.dispatchEvent(new Event('change',{bubbles:true}));pair.popup.classList.add('hidden')}}
 function openCustomRangeCalendar(pair,anchor){document.querySelectorAll('.custom-range-calendar').forEach(popup=>popup.classList.add('hidden'));pair.popup.classList.remove('hidden');const rect=anchor.getBoundingClientRect(),width=pair.popup.offsetWidth,height=pair.popup.offsetHeight;let left=Math.max(12,Math.min(rect.left,window.innerWidth-width-12)),top=rect.bottom+6;if(top+height>window.innerHeight-12)top=Math.max(12,rect.top-height-6);pair.popup.style.left=`${left}px`;pair.popup.style.top=`${top}px`}
 function updateDateRangeSummaryForInput(input,start,end){if(input.id==='search-alta-from')updateDateRangeSummary('search-date-range','search-alta-from','search-alta-to');else{const card=input.closest('.calculator-card');if(card)updateDateRangeSummaryForCard(card)}}
 function clearRangeDayCount(pair){clearTimeout(pair.tooltipTimer);clearTimeout(pair.tooltipRemoveTimer);if(!pair.tooltip)return;pair.tooltip.classList.add('fade-out');pair.tooltipRemoveTimer=setTimeout(()=>{pair.tooltip?.remove();pair.tooltip=null},450)}
@@ -37,7 +38,7 @@ function updateSuggestedAlta(){if(!altaManuallyChanged){const form=$('sale-form'
 function setTheme(theme){const dark=theme==='dark';document.body.classList.toggle('dark',dark);$('theme-button').textContent=dark?'☀':'☾';$('theme-button').setAttribute('aria-label',dark?'Activar modo claro':'Activar modo oscuro');$('theme-button').title=dark?'Activar modo claro':'Activar modo oscuro';$('theme-button').setAttribute('aria-pressed',String(dark));localStorage.setItem('ventas-theme',theme)}
 
 function toast(message,error=false){const el=$('toast');el.textContent=message;el.classList.toggle('error',error);el.classList.remove('hidden');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.add('hidden'),5500)}
-function updateGoogleSessionUI(){if(!$('google-session'))return;const connected=!!state.token;$('google-session').classList.toggle('hidden',!connected);$('direct-connect').classList.toggle('hidden',connected);$('direct-pending').classList.toggle('hidden',!!APP_GOOGLE_CLIENT_ID||connected);$('settings-button').textContent=connected?'Cambiar de cuenta':'Cambiar archivo';if(!connected)$('google-picker').classList.add('hidden')}
+function updateGoogleSessionUI(){if(!$('google-session'))return;const connected=!!state.token;$('google-session').classList.toggle('hidden',!connected);$('direct-connect').classList.toggle('hidden',connected);$('direct-pending').classList.toggle('hidden',!!APP_GOOGLE_CLIENT_ID||connected);$('settings-button').textContent=connected?'Cambiar de cuenta':'Cambiar archivo';$('google-picker').classList.toggle('hidden',!connected||state.profile==='leader'||!state.folderId)}
 function showView(view){
   if(!state.mode&&!['source','setup','local'].includes(view))view='source';
   document.querySelectorAll('.view').forEach(el=>el.classList.add('hidden'));
@@ -45,21 +46,34 @@ function showView(view){
   document.querySelector('.content').scrollTop=0;
   document.querySelectorAll('.nav-item').forEach(el=>el.classList.toggle('active',el.dataset.view===view));
   const moreMenu=$('nav-more-menu'),moreToggle=$('nav-more-toggle');
-  moreMenu.classList.add('hidden');moreToggle.setAttribute('aria-expanded','false');moreToggle.classList.toggle('active',['add','quote','create'].includes(view));
+  moreMenu.classList.add('hidden');moreToggle.setAttribute('aria-expanded','false');moreToggle.classList.toggle('active',['add','quote','create','sellers'].includes(view));
   document.querySelectorAll('.nav-item').forEach(el=>el.classList.toggle('active',el.dataset.view===view));
   $('breadcrumb-section').textContent=['source','setup','local'].includes(view)?'SELECCIÓN DE ARCHIVO':'VENTAS';
   $('breadcrumb-separator').classList.toggle('hidden',view==='source');
   $('breadcrumb-current').classList.toggle('hidden',view==='source');
-  $('breadcrumb-current').textContent=({source:'',setup:'GOOGLE DRIVE',local:'EXCEL LOCAL',home:'INICIO',add:'CARGAR VENTA',search:'BUSCAR VENTAS',calculator:'CALCULADORA',quote:'COTIZACIÓN',create:'MODIFICAR PREPAGAS'})[view];
+  $('breadcrumb-current').textContent=({source:'',setup:'GOOGLE DRIVE',local:'EXCEL LOCAL',home:'INICIO',add:'CARGAR VENTA',search:'BUSCAR VENTAS',calculator:'CALCULADORA',quote:'COTIZACIÓN',create:'MODIFICAR PREPAGAS',sellers:'VENDEDORES'})[view];
   updateGoogleSessionUI();
   if(view==='search')renderResults();
-  if(view==='create')renderPrepagas();
-  if(view==='calculator'){renderCalculator();renderLeaderMonth()}
+  if(view==='create'){
+    const seller=$('prepaga-seller');
+    seller.classList.toggle('hidden',!isLeaderBook());
+    seller.textContent=teamSellers.find(item=>item.id===state.sheetId)?.name||'';
+    renderPrepagas();
+  }
+  if(view==='calculator')renderCalculator();
+  if(view==='sellers')renderSellers();
+  if(view==='add'){
+    const seller=$('sale-seller');
+    $('sale-seller-row').classList.toggle('hidden',!isLeaderBook());
+    seller.textContent=isLeaderBook()?teamSellers.find(item=>item.id===state.sheetId)?.name||'':'';
+  }
   if(view==='add'&&!$('sale-form').elements.fecha.value)setDateInput($('sale-form').elements.fecha,suggestedAltaDate($('sale-form').elements.ingreso.value));
 }
 function sourceStatus(title=''){
   updateProfileControls();
   const connected=!!state.mode,google=state.mode==='google';
+  const team=isLeaderBook();
+  if(team)title='Equipo de ventas';
   document.querySelector('.status-dot').classList.toggle('connected',connected);
   $('sidebar-status').textContent=connected?(google?'Google Drive':'Excel local'):'Sin archivo';
   $('sidebar-sub').textContent=connected?title:'Elegí Google Drive o Excel local';
@@ -67,12 +81,12 @@ function sourceStatus(title=''){
   $('sync-indicator').classList.toggle('connected',connected);
   $('stat-connection').textContent=connected?(google?'En Google Drive':'Excel local'):'Sin archivo';
   $('stat-updated').textContent=connected?title:'Elegí una opción para empezar';
-  $('source-summary-title').textContent=google?'Tu planilla de Google':'Tu Excel local';
-  $('connected-description').textContent=google?`Los datos se guardan en “${title}” de la cuenta conectada.`:`Trabajás con “${title}”. Al cambiar datos se descarga una copia actualizada.`;
-  $('open-sheet').classList.toggle('hidden',!google);$('download-excel').classList.toggle('hidden',state.mode!=='local');
-  $('sheet-style-card').classList.toggle('hidden',!google);
-  $('data-source-label').textContent=google?'Datos de Google Sheets':'Datos del Excel abierto';
-  if(google)$('open-sheet').href=`https://docs.google.com/spreadsheets/d/${state.sheetId}/edit`;
+  $('source-summary-title').textContent=team?'Planillas del equipo':google?'Tu planilla de Google':'Tu Excel local';
+  $('connected-description').textContent=team?`${teamSellers.filter(seller=>seller.book).length} de ${teamSellers.length} planillas cargadas.`:google?`Los datos se guardan en “${title}” de la cuenta conectada.`:`Trabajás con “${title}”. Al cambiar datos se descarga una copia actualizada.`;
+  $('open-sheet').classList.toggle('hidden',!google||team);$('download-excel').classList.toggle('hidden',state.mode!=='local');
+  $('sheet-style-card').classList.toggle('hidden',!google||team);
+  $('data-source-label').textContent=team?'Datos del equipo':google?'Datos de Google Sheets':'Datos del Excel abierto';
+  if(google&&!team)$('open-sheet').href=`https://docs.google.com/spreadsheets/d/${state.sheetId}/edit`;
 }
 function sheetIdFromLink(value){const match=value.trim().match(/\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/);if(!match)throw Error('Pegá un enlace válido de Google Sheets.');return match[1]}
 function tokenFromGoogle(clientId){return new Promise((resolve,reject)=>{
@@ -99,7 +113,7 @@ async function applyGoogleIdentity(profile){
   if(!state.canLead)localStorage.setItem('ventas-profile','seller');
   updateProfileControls();
 }
-function sheetsApi(path,options={}){return googleFetch(`https://sheets.googleapis.com/v4/spreadsheets/${state.sheetId}${path}`,options)}
+function sheetsApi(path,options={},bookId=state.sheetId){return googleFetch(`https://sheets.googleapis.com/v4/spreadsheets/${bookId}${path}`,options)}
 function quoted(title){return `'${title.replaceAll("'","''")}'`}
 async function driveList(q){const files=[];let pageToken;do{const query=new URLSearchParams({q,fields:'nextPageToken,files(id,name)',pageSize:'100'});if(pageToken)query.set('pageToken',pageToken);const data=await googleFetch(`https://www.googleapis.com/drive/v3/files?${query}`);files.push(...(data.files||[]));pageToken=data.nextPageToken}while(pageToken);return files}
 async function listGoogleBooks(){
@@ -108,25 +122,64 @@ async function listGoogleBooks(){
   const folders=await driveList(`name = '${folderName}' and mimeType = 'application/vnd.google-apps.folder' and 'root' in parents and trashed = false`);
   let folder=folders[0];if(!folder)folder=await googleFetch('https://www.googleapis.com/drive/v3/files?fields=id,name',{method:'POST',body:JSON.stringify({name:folderName,mimeType:'application/vnd.google-apps.folder'})});state.folderId=folder.id;
   const files=await driveList(`'${folder.id}' in parents and mimeType = 'application/vnd.google-apps.spreadsheet' and trashed = false`),select=$('drive-sheet-select');
-  files.sort((a,b)=>a.name.localeCompare(b.name,'es'));select.replaceChildren(...files.map(file=>new Option(file.name,file.id)));
-  if(!select.options.length)select.add(new Option('No hay planillas disponibles',''));
-  $('book-picker-label').firstChild.textContent=state.profile==='leader'?'Vendedores':'Planillas de ventasApp';$('new-book-label').firstChild.textContent=state.profile==='leader'?'Nombre del vendedor':'Nombre del archivo nuevo';$('direct-create').textContent=state.profile==='leader'?'Crear vendedor':'Crear archivo';$('google-picker').classList.remove('hidden');
+  files.sort((a,b)=>a.name.localeCompare(b.name,'es'));
+  if(state.profile==='seller')select.replaceChildren(...(files.length?files.map(file=>new Option(file.name,file.id)):[new Option('No hay planillas disponibles','')]));
+  updateGoogleSessionUI();
+  return files;
 }
-async function connectGoogle(event){event.preventDefault();try{
+
+async function loadTeam(){
+  const dialog=$('team-loading'),progress=$('team-loading-progress');
+  const updateProgress=message=>{progress.textContent=message;if(startupAbort)$('startup-message').textContent=message};
+  updateProgress('Estamos buscando las planillas del equipo.');
+  if(!startupAbort)dialog.showModal();
+  try{
+    const files=await listGoogleBooks(),sellers=[];
+    for(let offset=0;offset<files.length;offset+=4){
+      const batch=files.slice(offset,offset+4);
+      const results=await Promise.allSettled(batch.map(file=>readGoogleBook(file.id)));
+      if(!state.token||startupAbort?.signal.aborted)throw Error('No se pudo completar la carga del equipo.');
+      results.forEach((result,index)=>sellers.push({...batch[index],book:result.status==='fulfilled'?normalizeGoogleBook(result.value):null}));
+      updateProgress(`${sellers.length} de ${files.length} planillas consultadas.`);
+    }
+    teamSellers=sellers;
+    state.mode='google';
+    activateSeller('');
+    renderBookControls();
+    sourceStatus();
+    if(sellers.some(seller=>!seller.book))toast('Algunas planillas no se pudieron cargar. Podés reintentar desde Vendedores.',true);
+  }finally{if(dialog.open)dialog.close()}
+}
+async function connectGoogle(event){event.preventDefault();if(state.busy)return;state.busy=true;try{
   if(!APP_GOOGLE_CLIENT_ID)throw Error('El inicio directo todavía no está configurado.');
   const grant=await tokenFromGoogle(APP_GOOGLE_CLIENT_ID);state.token=grant.access_token;
   state.canLead=false;await applyGoogleIdentity(await googleFetch('https://openidconnect.googleapis.com/v1/userinfo'));updateGoogleSessionUI();
   const lifetime=Number(grant.expires_in);if(Number.isFinite(lifetime)&&lifetime>0)localStorage.setItem('ventas-google-session',JSON.stringify({token:state.token,userId:state.userId,expiresAt:Date.now()+lifetime*1000-60000}));
-  await listGoogleBooks();const last=localStorage.getItem('ventas-last-'+state.profile+'-'+state.userId)||(state.profile==='seller'?localStorage.getItem('ventas-last-'+state.userId):null);if(last&&Array.from($('drive-sheet-select').options).some(o=>o.value===last)){await chooseGoogleBook(last);return}toast('Cuenta conectada. Elegí o creá tu planilla.');
-}catch(error){state.token=null;state.canLead=false;state.profile='seller';localStorage.removeItem('ventas-google-session');sourceStatus();updateGoogleSessionUI();toast(error.message,true)}}
+  await enterGoogleWorkspace();
+}catch(error){state.token=null;state.canLead=false;state.profile='seller';state.mode=null;localStorage.removeItem('ventas-google-session');sourceStatus();showView('setup');toast(error.message,true)}finally{state.busy=false}}
+
+async function enterGoogleWorkspace(){
+  if(state.profile==='leader'){
+    await loadTeam();
+    showView('home');
+    return;
+  }
+  await listGoogleBooks();
+  await openLastSellerBook();
+}
+async function openLastSellerBook(){
+  const last=localStorage.getItem('ventas-last-seller-'+state.userId)||localStorage.getItem('ventas-last-'+state.userId);
+  if(last&&Array.from($('drive-sheet-select').options).some(option=>option.value===last))await chooseGoogleBook(last);
+  else showView('setup');
+}
 async function restoreGoogleSession(){
   let saved;try{saved=JSON.parse(localStorage.getItem('ventas-google-session')||'null')}catch{localStorage.removeItem('ventas-google-session');return}
   if(!saved||typeof saved.token!=='string'||typeof saved.userId!=='string'||!Number.isFinite(saved.expiresAt)||saved.expiresAt<=Date.now()){localStorage.removeItem('ventas-google-session');return}
   state.token=saved.token;state.userId=saved.userId;state.canLead=false;
-  try{const profile=await googleFetch('https://openidconnect.googleapis.com/v1/userinfo');if(profile.sub!==saved.userId)throw Error('La cuenta conectada cambió.');await applyGoogleIdentity(profile);await listGoogleBooks();const last=localStorage.getItem('ventas-last-'+state.profile+'-'+state.userId)||(state.profile==='seller'?localStorage.getItem('ventas-last-'+state.userId):null);if(last&&Array.from($('drive-sheet-select').options).some(o=>o.value===last)){await chooseGoogleBook(last)}else showView('setup')}
+  try{const profile=await googleFetch('https://openidconnect.googleapis.com/v1/userinfo');if(profile.sub!==saved.userId)throw Error('La cuenta conectada cambió.');await applyGoogleIdentity(profile);await enterGoogleWorkspace()}
   catch(error){state.token=null;state.canLead=false;state.profile='seller';state.mode=null;localStorage.removeItem('ventas-google-session');sourceStatus();showView('setup');toast('No se pudo recuperar la sesión. Conectá Google nuevamente.',true)}
 }
-async function finishStartup(){startupAbort=new AbortController();const timer=setTimeout(()=>startupAbort?.abort(),8000);try{await restoreGoogleSession()}catch(error){state.token=null;state.mode=null;sourceStatus();showView('setup');toast('No se pudo recuperar la sesión. Conectá Google nuevamente.',true)}finally{clearTimeout(timer);startupAbort=null;window.startupComplete()}}
+async function finishStartup(){startupAbort=new AbortController();const timer=setTimeout(()=>startupAbort?.abort(),28000);try{await restoreGoogleSession()}catch(error){state.token=null;state.mode=null;sourceStatus();showView('setup');toast('No se pudo recuperar la sesión. Conectá Google nuevamente.',true)}finally{clearTimeout(timer);startupAbort=null;window.startupComplete()}}
 function saveClientConfig(event){
   event.preventDefault();
   const clientId=$('admin-client-id').value.trim();
@@ -136,14 +189,72 @@ function saveClientConfig(event){
   $('google-setup-warning').classList.add('hidden');$('admin-setup').open=false;
   toast('Configuración guardada. Ahora podés conectar Google. Compartí este enlace para que otros no deban configurarlo.');
 }
-async function chooseGoogleBook(id){if(!id)throw Error('Elegí una planilla.');state.sheetId=id;state.mode='google';try{await refresh();localStorage.setItem('ventas-last-'+state.profile+'-'+state.userId,id);showView('home')}catch(error){state.mode=null;sourceStatus();showView('setup');throw error}}
-async function createGoogleBook(){try{
-  const title=$('new-book-name').value.trim();if(!title)throw Error(state.profile==='leader'?'Ingresá el nombre del vendedor.':'Ingresá el nombre de la planilla.');if(state.profile==='leader'&&Array.from($('drive-sheet-select').options).some(option=>option.value&&option.text.toLocaleLowerCase()===title.toLocaleLowerCase()))throw Error('Ya existe un vendedor con ese nombre.');
+async function chooseGoogleBook(id){if(!id)throw Error('Elegí una planilla.');state.sheetId=id;state.mode='google';try{await refresh();localStorage.setItem('ventas-last-seller-'+state.userId,id);showView('home')}catch(error){state.mode=null;sourceStatus();showView('setup');throw error}}
+async function createGoogleBook(event){event.preventDefault();if(state.busy||!state.token)return;state.busy=true;try{
+  const leader=isLeaderBook(),input=$(leader?'new-seller-name':'new-book-name'),title=input.value.trim();
+  if(!title)throw Error(leader?'Ingresá el nombre del vendedor.':'Ingresá el nombre de la planilla.');
+  if(leader&&(await listGoogleBooks()).some(seller=>seller.name.toLocaleLowerCase()===title.toLocaleLowerCase()))throw Error('Ya existe un vendedor con ese nombre.');
   const result=await googleFetch('https://www.googleapis.com/drive/v3/files?fields=id',{method:'POST',body:JSON.stringify({name:title,mimeType:'application/vnd.google-apps.spreadsheet',parents:[state.folderId]})});
-  state.sheetId=result.id;const meta=await sheetsApi('?fields=sheets(properties(sheetId))');const sheetId=meta.sheets?.[0]?.properties?.sheetId;if(sheetId===undefined)throw Error('No se pudo preparar la hoja creada.');
-  await sheetsApi(':batchUpdate',{method:'POST',body:JSON.stringify({requests:[{updateSheetProperties:{properties:{sheetId,title:'Mi prepaga',gridProperties:{frozenRowCount:1}},fields:'title,gridProperties.frozenRowCount'}},{updateCells:{start:{sheetId,rowIndex:0,columnIndex:0},rows:[{values:physicalValues(HEADERS,true).map(value=>cell(value))}],fields:'userEnteredValue'}}]})});
-  await chooseGoogleBook(result.id);toast(state.profile==='leader'?'Vendedor creado en ventasApp Lider.':'Planilla creada en ventasApp.');
-}catch(error){toast(error.message,true)}}
+  const meta=await sheetsApi('?fields=sheets(properties(sheetId))',{},result.id);const sheetId=meta.sheets?.[0]?.properties?.sheetId;if(sheetId===undefined)throw Error('No se pudo preparar la hoja creada.');
+  await sheetsApi(':batchUpdate',{method:'POST',body:JSON.stringify({requests:[{updateSheetProperties:{properties:{sheetId,title:'Mi prepaga',gridProperties:{frozenRowCount:1}},fields:'title,gridProperties.frozenRowCount'}},{updateCells:{start:{sheetId,rowIndex:0,columnIndex:0},rows:[{values:physicalValues(HEADERS,true).map(value=>cell(value))}],fields:'userEnteredValue'}}]})},result.id);
+  if(leader){
+    input.value='';
+    teamSellers=[...teamSellers,{id:result.id,name:title,book:null}].sort((a,b)=>a.name.localeCompare(b.name,'es'));
+    renderSellers();
+    const seller=teamSellers.find(item=>item.id===result.id);
+    seller.book=normalizeGoogleBook(await readGoogleBook(result.id));
+    renderBookControls();
+    sourceStatus();
+    renderSellers();
+  }else{
+    await listGoogleBooks();
+    $('drive-sheet-select').value=result.id;
+    await chooseGoogleBook(result.id);
+  }
+  toast(leader?'Vendedor creado.':'Planilla creada en ventasApp.');
+}catch(error){toast(error.message,true)}finally{state.busy=false}}
+
+function isLeaderBook(){return state.profile==='leader'&&state.mode==='google'}
+
+async function selectSaleSeller(title='¿Para qué vendedor es la venta?'){
+  if(state.busy)return false;
+  if(!isLeaderBook())return true;
+  const sellers=teamSellers.filter(seller=>seller.book);
+  if(!sellers.length){
+    showView('sellers');
+    toast(teamSellers.length?'Actualizá el listado para volver a cargar las planillas.':'Creá un vendedor para empezar.',true);
+    return false;
+  }
+  const dialog=$('sale-seller-dialog'),select=$('sale-seller-select');
+  $('sale-seller-title').textContent=title;
+  select.replaceChildren(new Option('Elegí un vendedor',''),...sellers.map(seller=>new Option(seller.name,seller.id)));
+  state.busy=true;
+  try{
+    dialog.returnValue='';
+    const closed=new Promise(resolve=>dialog.addEventListener('close',resolve,{once:true}));
+    dialog.showModal();
+    await closed;
+    if(dialog.returnValue!=='continue'||!select.value)return false;
+    if(select.value!==state.sheetId){
+      if(!activateSeller(select.value))return false;
+      $('sale-sheet').value='';
+    }
+    return true;
+  }catch(error){
+    toast(error.message,true);
+    return false;
+  }finally{state.busy=false}
+}
+
+async function openNewSale(){
+  if(!state.mode&&state.profile==='leader'&&state.token){
+    if(!state.busy)showView('setup');
+    return;
+  }
+  if(!(await selectSaleSeller()))return;
+  if(isLeaderBook()&&editingSale)resetSaleForm();
+  showView('add');
+}
 function localRows(sheet){
   if(!sheet?.['!ref'])return[];
   const end=XLSX.utils.decode_range(sheet['!ref']).e.r,rows=[];
@@ -164,20 +275,67 @@ async function createLocal(){try{
   const book=XLSX.utils.book_new();XLSX.utils.book_append_sheet(book,XLSX.utils.aoa_to_sheet([physicalValues(HEADERS,true)]),'Mi prepaga');
   state.book=book;state.fileName=`${name}.xlsx`;state.mode='local';state.token=null;state.sheetId='';rebuildLocal();await downloadLocal();showView('home');toast('Excel creado y descargado.');
 }catch(error){toast(error.message,true)}}
-function buildSales(){
-  state.sales=[];for(const sheet of state.sheets)(state.rows.get(sheet.title)||[]).slice(1).forEach((values,i)=>{if(values[1])state.sales.push({sheet:sheet.title,row:i+2,values,ordered:sheet.ordered,date:displayDate(values[0])})});
-  $('stat-sales').textContent=state.sales.length.toLocaleString('es-AR');$('stat-sheets').textContent=state.sheets.length.toLocaleString('es-AR');
+function collectSales(sheets,rows){
+  return sheets.flatMap(sheet=>(rows.get(sheet.title)||[]).slice(1).flatMap((values,index)=>values[1]?[{sheet:sheet.title,row:index+2,values,ordered:sheet.ordered,date:displayDate(values[0])}]:[]));
+}
+function buildSales(sales=collectSales(state.sheets,state.rows)){
+  state.sales=sales;
+  if(isLeaderBook()){
+    const seller=teamSellers.find(item=>item.id===state.sheetId);
+    if(seller)seller.book={sheets:state.sheets,rows:state.rows,sales:state.sales};
+  }
+  renderBookControls();
+}
+function activateSeller(id){
+  const book=teamSellers.find(seller=>seller.id===id)?.book;
+  state.sheetId=book?id:'';
+  state.sheets=book?.sheets||[];
+  state.rows=book?.rows||new Map();
+  state.sales=book?.sales||[];
+  updateSaleSheets();
+  return !!book;
+}
+function updateSaleSheets(){
   const sale=$('sale-sheet'),previous=sale.value;sale.replaceChildren(new Option('Elegí una prepaga',''),...state.sheets.map(sheet=>new Option(sheet.title,sheet.title)));if(state.sheets.some(sheet=>sheet.title===previous))sale.value=previous;
-  const filter=$('search-sheet'),lastFilter=filter.value;filter.replaceChildren(new Option('Todas las prepagas',''),...state.sheets.map(sheet=>new Option(sheet.title,sheet.title)));filter.value=state.sheets.some(sheet=>sheet.title===lastFilter)?lastFilter:'';renderResults();renderPrepagas();renderCalculator();
+}
+function renderBookControls(){
+  const books=isLeaderBook()?teamSellers.flatMap(seller=>seller.book?[seller.book]:[]):[state];
+  $('stat-sales').textContent=books.reduce((sum,book)=>sum+book.sales.length,0).toLocaleString('es-AR');
+  $('stat-sheets').textContent=books.reduce((sum,book)=>sum+book.sheets.length,0).toLocaleString('es-AR');
+  updateSaleSheets();
+  renderResults();
+  renderPrepagas();
+  renderCalculator();
 }
 function styleStatus(message,error=false){$('sheet-style-message').textContent=message;$('sheet-style-message').classList.toggle('style-error',error)}
+async function readGoogleBook(id){
+  const meta=await sheetsApi('?fields=properties(title),sheets(properties(sheetId,title,gridProperties(rowCount,columnCount)),bandedRanges,conditionalFormats,basicFilter)',{},id);
+  const sheets=(meta.sheets||[]).map(item=>({...item.properties,bandedRanges:item.bandedRanges,conditionalFormats:item.conditionalFormats,basicFilter:item.basicFilter}));
+  const rows=new Map();
+  if(sheets.length){
+    const query=new URLSearchParams();
+    for(const sheet of sheets)query.append('ranges',`${quoted(sheet.title)}!A1:O`);
+    query.set('valueRenderOption','FORMULA');
+    const data=await sheetsApi(`/values:batchGet?${query}`,{},id);
+    sheets.forEach((sheet,index)=>rows.set(sheet.title,data.valueRanges?.[index]?.values||[]));
+  }
+  return {title:meta.properties?.title||'Google Sheets',sheets,rows};
+}
+function normalizeGoogleBook(book){
+  const {sheets,rows}=book;
+  for(const sheet of sheets){
+    const values=rows.get(sheet.title)||[];
+    sheet.ordered=orderedHeaders(values[0]);
+    rows.set(sheet.title,values.map(row=>logicalValues(row,sheet.ordered)));
+  }
+  return {...book,sales:collectSales(sheets,rows)};
+}
 async function refresh(options={}){
   if(state.mode==='local'){rebuildLocal();return true}if(state.mode!=='google'||!state.token){showView('source');return false}
-  const meta=await sheetsApi('?fields=properties(title),sheets(properties(sheetId,title,gridProperties(rowCount,columnCount)),bandedRanges,conditionalFormats,basicFilter)');state.sheets=(meta.sheets||[]).map(item=>({...item.properties,bandedRanges:item.bandedRanges,conditionalFormats:item.conditionalFormats,basicFilter:item.basicFilter}));state.rows=new Map();
-  if(state.sheets.length){const query=new URLSearchParams();for(const sheet of state.sheets)query.append('ranges',`${quoted(sheet.title)}!A1:O`);query.set('valueRenderOption','FORMULA');const data=await sheetsApi(`/values:batchGet?${query}`);state.sheets.forEach((sheet,i)=>state.rows.set(sheet.title,data.valueRanges?.[i]?.values||[]))}
+  const book=await readGoogleBook(state.sheetId);
+  state.sheets=book.sheets;state.rows=book.rows;
   const toMove=state.sheets.filter(sheet=>{const rows=state.rows.get(sheet.title)||[],head=rows[0]||[];return legacyHeaders(head)||(columnName(head[6])==='GANANCIA'&&columnName(head[7])==='GANANCIA REAL'&&rows.every(row=>[8,9,10,11,12].every(index=>row[index]===undefined||row[index]==='')))});if(toMove.length&&!options.skipOrderMigration){try{const requests=toMove.flatMap(sheet=>{const head=state.rows.get(sheet.title)?.[0]||[],move={moveDimension:{source:{sheetId:sheet.sheetId,dimension:'COLUMNS',startIndex:10,endIndex:11},destinationIndex:6}};return head[10]?[move]:[move,{updateCells:{start:{sheetId:sheet.sheetId,rowIndex:0,columnIndex:6},rows:[{values:[cell('Total bonificaciones')]}],fields:'userEnteredValue'}}]});await sheetsApi(':batchUpdate',{method:'POST',body:JSON.stringify({requests})});return await refresh({...options,skipOrderMigration:true,forceAll:true})}catch(error){state.mode=null;sourceStatus();showView('setup');throw Error(`No se pudo verificar el nuevo orden. Volvé a abrir la planilla. ${error.message}`)}}
-  for(const sheet of state.sheets){const rows=state.rows.get(sheet.title)||[];sheet.ordered=orderedHeaders(rows[0]);state.rows.set(sheet.title,rows.map(row=>logicalValues(row,sheet.ordered)))}
-  buildSales();sourceStatus(meta.properties?.title||'Google Sheets');if(state.profile==='leader')try{await ensureMonthlyTables()}catch(error){toast('Ventas cargadas, pero no se pudieron actualizar las tablas mensuales: '+error.message,true)}try{return await formatGoogleSheets(options)}catch(error){styleStatus(`No se pudo aplicar el diseño: ${error.message}`,true);return false}
+  buildSales(normalizeGoogleBook(book).sales);sourceStatus(book.title);if(state.profile==='leader')try{await ensureMonthlyTables()}catch(error){toast('Ventas cargadas, pero no se pudieron actualizar las tablas mensuales: '+error.message,true)}try{return await formatGoogleSheets(options)}catch(error){styleStatus(`No se pudo aplicar el diseño: ${error.message}`,true);return false}
 }
 async function formatGoogleSheets({forceAll=false,forceSheetId=null}={}){const pending=state.sheets.filter(sheet=>forceAll||sheet.sheetId===forceSheetId||!formattedGoogleSheets.has(`${state.sheetId}:${sheet.sheetId}`));if(!pending.length)return true;styleStatus('Aplicando el diseño en tu planilla de Google…');const {applyGoogleSheetStyle}=await import(new URL('sheet-style.mjs?v=20261105order',APP_ASSET_BASE).href);const failures=[];for(const sheet of pending){try{const warnings=await applyGoogleSheetStyle(sheet,requests=>sheetsApi(':batchUpdate',{method:'POST',body:JSON.stringify({requests})}));if(warnings.length)failures.push(`${sheet.title}: ${warnings.join('; ')}`);else formattedGoogleSheets.add(`${state.sheetId}:${sheet.sheetId}`)}catch(error){failures.push(`${sheet.title}: ${error.message}`)}}if(failures.length){styleStatus(`No se completó el diseño. ${failures.join(' · ')}`,true);return false}styleStatus('Diseño aplicado en la planilla de Google.');return true}
 function parseMoney(text,label,required=false){let raw=String(text||'').trim().replace(/[$\s]/g,'');if(!raw){if(required)throw Error(`Ingresá ${label}.`);return null}if(raw.includes(','))raw=raw.replaceAll('.','').replace(',','.');else if(/^\d{1,3}(\.\d{3})+$/.test(raw))raw=raw.replaceAll('.','');const n=Number(raw);if(!Number.isFinite(n)||n<0)throw Error(`${label} debe ser un número no negativo.`);return n}
@@ -199,16 +357,25 @@ function existingAmount(value){if(value===''||value===undefined||value===null||S
 function saleDiscounts(row){try{const parsed=JSON.parse(String(row.values[9]||'[]'));if(Array.isArray(parsed)&&parsed.length&&parsed.every(value=>Number.isFinite(Number(value))&&Number(value)>=0))return parsed.map(Number)}catch{}const total=existingAmount(row.values[10]);return total!==null&&total>0?[total]:[]}
 function financialChanged(row,value,discounts,multiplier){const oldValue=existingAmount(row.values[5]),oldMultiplier=row.values[11]===''||row.values[11]===undefined||row.values[11]===null?200:Number(row.values[11]),oldDiscounts=saleDiscounts(row);return oldValue===null||oldValue!==value||oldMultiplier!==multiplier||oldDiscounts.length!==discounts.length||oldDiscounts.some((item,index)=>item!==discounts[index])}
 function sameSaleValues(a,b){return Array.from({length:15},(_,index)=>JSON.stringify(a[index]??'')===JSON.stringify(b[index]??'')).every(Boolean)}
+async function verifyLeaderSale(row){
+  if(isLeaderBook()&&!sameSaleValues(await readGoogleSaleRow(row,row.row),row.values))throw Error('La venta cambió en Google. Actualizá los datos antes de continuar.');
+}
 async function readGoogleSaleRow(sheet,row){const range=`${quoted(sheet.sheet)}!A${row}:O${row}`,fresh=await sheetsApi(`/values/${encodeURIComponent(range)}?valueRenderOption=FORMULA`);return logicalValues(fresh.values?.[0]||[],sheet.ordered)}
 function resetSaleForm(){const form=$('sale-form');editingSale=null;form.reset();altaManuallyChanged=false;$('discount-list').replaceChildren();$('quote-status').textContent='El PDF se lee en este navegador. Revisá los datos antes de guardar.';setDateInput(form.elements.fecha,suggestedAltaDate(''));form.elements.capitas.value='1';form.elements.multiplicador.value='200';$('add-title').textContent='Cargar una venta.';$('add-lead').textContent='Completá los datos o subí una cotización de Sancor, Avalian u Omint para rellenar los campos disponibles.';$('save-sale').textContent='Guardar venta →';$('cancel-edit').classList.add('hidden');updateGain()}
 function editSale(row){if(state.busy)return;const form=$('sale-form');form.reset();editingSale={...row,values:[...row.values],sourceMode:state.mode,sourceBook:state.book,sourceId:state.sheetId};altaManuallyChanged=true;form.elements.prepaga.value=row.sheet;setDateInput(form.elements.fecha,dateISO(row.values[0]));form.elements.nombre.value=row.values[1]||'';form.elements.dni.value=row.values[8]||'';form.elements.telefono.value=row.values[12]||'';form.elements.capitas.value=row.values[2]||1;form.elements.ingreso.value=row.values[3]||'';form.elements.plan.value=row.values[4]||'';const value=existingAmount(row.values[5]);form.elements.valor.value=value===null?'':String(value);form.elements.multiplicador.value=row.values[11]!==''&&row.values[11]!==undefined&&row.values[11]!==null?row.values[11]:200;$('discount-list').replaceChildren();saleDiscounts(row).forEach(value=>addDiscount(String(value)));$('quote-status').textContent='Podés cargar otra cotización o modificar los datos manualmente.';$('add-title').textContent='Editar venta.';$('add-lead').textContent='Modificá los datos de esta venta y guardá los cambios.';$('save-sale').textContent='Guardar cambios';$('cancel-edit').classList.remove('hidden');updateGain();showView('add')}
-async function setSalePaid(row,paid){if(state.busy)return;try{state.busy=true;let styleOk=true;const sheet=state.sheets.find(item=>item.title===row.sheet);if(!sheet)throw Error('La prepaga ya no existe. Actualizá los datos.');if(state.mode==='local'){const ws=state.book.Sheets[sheet.title];putLocalCell(ws,0,PAID_COLUMN,'Pagado');putLocalCell(ws,row.row-1,PAID_COLUMN,paid?'Sí':'');const range=XLSX.utils.decode_range(ws['!ref']||'A1:O1');range.e.r=Math.max(range.e.r,row.row-1);range.e.c=Math.max(range.e.c,PAID_COLUMN);ws['!ref']=XLSX.utils.encode_range(range);rebuildLocal();await downloadLocal()}else{await sheetsApi(':batchUpdate',{method:'POST',body:JSON.stringify({requests:[{updateCells:{start:{sheetId:sheet.sheetId,rowIndex:0,columnIndex:PAID_COLUMN},rows:[{values:[cell('Pagado')]}],fields:'userEnteredValue'}},{updateCells:{start:{sheetId:sheet.sheetId,rowIndex:row.row-1,columnIndex:PAID_COLUMN},rows:[{values:[cell(paid?'Sí':'')]}],fields:'userEnteredValue'}}]})});styleOk=await refresh({forceSheetId:sheet.sheetId})}toast(styleOk?(paid?'Venta marcada como pagada.':'Venta marcada como pendiente.'):'Estado guardado; revisá el diseño en Inicio.',!styleOk)}catch(error){toast(error.message,true)}finally{state.busy=false;renderResults()}}
+async function setSalePaid(row,paid){if(state.busy)return;try{state.busy=true;let styleOk=true;await verifyLeaderSale(row);const sheet=state.sheets.find(item=>item.title===row.sheet);if(!sheet)throw Error('La prepaga ya no existe. Actualizá los datos.');if(state.mode==='local'){const ws=state.book.Sheets[sheet.title];putLocalCell(ws,0,PAID_COLUMN,'Pagado');putLocalCell(ws,row.row-1,PAID_COLUMN,paid?'Sí':'');const range=XLSX.utils.decode_range(ws['!ref']||'A1:O1');range.e.r=Math.max(range.e.r,row.row-1);range.e.c=Math.max(range.e.c,PAID_COLUMN);ws['!ref']=XLSX.utils.encode_range(range);rebuildLocal();await downloadLocal()}else{await sheetsApi(':batchUpdate',{method:'POST',body:JSON.stringify({requests:[{updateCells:{start:{sheetId:sheet.sheetId,rowIndex:0,columnIndex:PAID_COLUMN},rows:[{values:[cell('Pagado')]}],fields:'userEnteredValue'}},{updateCells:{start:{sheetId:sheet.sheetId,rowIndex:row.row-1,columnIndex:PAID_COLUMN},rows:[{values:[cell(paid?'Sí':'')]}],fields:'userEnteredValue'}}]})});styleOk=await refresh({forceSheetId:sheet.sheetId})}toast(styleOk?(paid?'Venta marcada como pagada.':'Venta marcada como pendiente.'):'Estado guardado; revisá el diseño en Inicio.',!styleOk)}catch(error){toast(error.message,true)}finally{state.busy=false;renderResults()}}
 function confirmSaleDeletion(row){return new Promise(resolve=>{const dialog=$('delete-sale-dialog'),input=$('delete-sale-confirmation'),button=$('confirm-delete-sale');$('delete-sale-message').textContent=`¿Estás seguro que querés eliminar la venta de ${row.values[1]||'este cliente'} en ${row.sheet}? Esta acción no se puede deshacer.`;input.value='';button.disabled=true;const finish=confirmed=>{dialog.close();resolve(confirmed)};input.oninput=()=>{button.disabled=input.value!=='Eliminar'};button.onclick=()=>finish(true);$('cancel-delete-sale').onclick=()=>finish(false);dialog.oncancel=event=>{event.preventDefault();finish(false)};dialog.showModal();input.focus()})}
-async function deleteSale(row){if(state.busy||!(await confirmSaleDeletion(row)))return;try{state.busy=true;const sheet=state.sheets.find(item=>item.title===row.sheet);if(!sheet)throw Error('La prepaga ya no existe. Actualizá los datos.');if(state.mode==='local'){const ws=state.book.Sheets[sheet.title],start=row.row-1,entries=Object.keys(ws).filter(key=>/^[A-Z]+\d+$/.test(key)).map(key=>[XLSX.utils.decode_cell(key),ws[key]]);for(const [pos] of entries)delete ws[XLSX.utils.encode_cell(pos)];for(const [pos,value] of entries)if(pos.r<start)ws[XLSX.utils.encode_cell(pos)]=value;else if(pos.r>start)ws[XLSX.utils.encode_cell({r:pos.r-1,c:pos.c})]=value;if(ws['!ref']){const range=XLSX.utils.decode_range(ws['!ref']);range.e.r=Math.max(0,range.e.r-1);ws['!ref']=XLSX.utils.encode_range(range)}rebuildLocal();await downloadLocal()}else{await sheetsApi(':batchUpdate',{method:'POST',body:JSON.stringify({requests:[{deleteDimension:{range:{sheetId:sheet.sheetId,dimension:'ROWS',startIndex:row.row-1,endIndex:row.row}}}]})});await refresh({forceSheetId:sheet.sheetId})}toast(state.mode==='local'?'Venta eliminada; se descargó el Excel actualizado.':'Venta eliminada.')}catch(error){toast(error.message,true)}finally{state.busy=false;renderResults()}}
+async function deleteSale(row){if(state.busy||!(await confirmSaleDeletion(row)))return;try{state.busy=true;await verifyLeaderSale(row);const sheet=state.sheets.find(item=>item.title===row.sheet);if(!sheet)throw Error('La prepaga ya no existe. Actualizá los datos.');if(state.mode==='local'){const ws=state.book.Sheets[sheet.title],start=row.row-1,entries=Object.keys(ws).filter(key=>/^[A-Z]+\d+$/.test(key)).map(key=>[XLSX.utils.decode_cell(key),ws[key]]);for(const [pos] of entries)delete ws[XLSX.utils.encode_cell(pos)];for(const [pos,value] of entries)if(pos.r<start)ws[XLSX.utils.encode_cell(pos)]=value;else if(pos.r>start)ws[XLSX.utils.encode_cell({r:pos.r-1,c:pos.c})]=value;if(ws['!ref']){const range=XLSX.utils.decode_range(ws['!ref']);range.e.r=Math.max(0,range.e.r-1);ws['!ref']=XLSX.utils.encode_range(range)}rebuildLocal();await downloadLocal()}else{await sheetsApi(':batchUpdate',{method:'POST',body:JSON.stringify({requests:[{deleteDimension:{range:{sheetId:sheet.sheetId,dimension:'ROWS',startIndex:row.row-1,endIndex:row.row}}}]})});await refresh({forceSheetId:sheet.sheetId})}toast(state.mode==='local'?'Venta eliminada; se descargó el Excel actualizado.':'Venta eliminada.')}catch(error){toast(error.message,true)}finally{state.busy=false;renderResults()}}
 function duplicateSales(dni,name){const key=name.trim().toLocaleLowerCase();return state.sales.filter(row=>String(row.values[8]||'').replace(/\D/g,'')===dni||(!row.values[8]&&String(row.values[1]||'').trim().toLocaleLowerCase()===key)).sort((a,b)=>dateISO(b.values[0]).localeCompare(dateISO(a.values[0])))}
 function chooseDuplicate(matches){return new Promise(resolve=>{const dialog=$('duplicate-dialog'),select=$('duplicate-record');select.replaceChildren(...matches.map((row,i)=>new Option(`${row.date} · ${row.sheet} · ${row.values[4]||'Sin plan'}`,String(i))));$('duplicate-select-label').classList.toggle('hidden',matches.length===1);$('duplicate-message').textContent=matches.length===1?`Hay una carga de este cliente del ${matches[0].date} en ${matches[0].sheet}. ¿Qué querés hacer?`:`Hay ${matches.length} cargas de este cliente. Elegí la que querés sobrescribir o agregá una nueva cotización.`;let done=false;const finish=choice=>{if(done)return;done=true;dialog.close();resolve(choice==='overwrite'?{action:choice,row:matches[Number(select.value)]}:{action:choice})};$('duplicate-new').onclick=()=>finish('new');$('duplicate-overwrite').onclick=()=>finish('overwrite');$('duplicate-cancel').onclick=()=>finish('cancel');dialog.oncancel=event=>{event.preventDefault();finish('cancel')};dialog.showModal()})}
 async function saveSale(event){event.preventDefault();if(state.busy)return;const form=event.currentTarget,v=Object.fromEntries(new FormData(form).entries());state.busy=true;$('save-sale').disabled=true;try{
-  const edit=editingSale;if(edit&&(state.mode!==edit.sourceMode||(state.mode==='local'?state.book!==edit.sourceBook:state.sheetId!==edit.sourceId)))throw Error('El archivo cambió. Volvé a buscar la venta antes de editarla.');
+  const edit=editingSale;
+  if(isLeaderBook()&&!edit){
+    const book=normalizeGoogleBook(await readGoogleBook(state.sheetId));
+    state.sheets=book.sheets;state.rows=book.rows;
+    buildSales(book.sales);
+  }
+  if(edit&&(state.mode!==edit.sourceMode||(state.mode==='local'?state.book!==edit.sourceBook:state.sheetId!==edit.sourceId)))throw Error('El archivo cambió. Volvé a buscar la venta antes de editarla.');
   if(edit){const current=state.sales.find(row=>row.sheet===edit.sheet&&row.row===edit.row);if(!current||!sameSaleValues(current.values,edit.values))throw Error('La venta cambió. Actualizá la búsqueda y volvé a editarla.');if(state.mode==='google'&&!sameSaleValues(await readGoogleSaleRow(edit,edit.row),edit.values))throw Error('La venta cambió en Google. Actualizá la búsqueda y volvé a editarla.')}
   const sheet=state.sheets.find(item=>item.title===v.prepaga);if(!sheet)throw Error('Elegí una prepaga.');const capitas=Number(v.capitas);if(!Number.isInteger(capitas)||capitas<1)throw Error('Cápitas debe ser un entero positivo.');
   const dni=String(v.dni||'').replace(/[.\s-]/g,'');if(!/^\d{7,9}$/.test(dni))throw Error('Ingresá un DNI de 7 a 9 dígitos.');
@@ -240,6 +407,7 @@ async function createSheet(event){event.preventDefault();if(state.busy)return;co
 }catch(error){toast(error.message,true)}finally{state.busy=false}}
 async function loadOmintQuoteAsSale(event){
   const {quote,name}=event.detail;if(state.busy||!quote||!state.mode)return;
+  if(!(await selectSaleSeller()))return;
   let sheet=state.sheets.find(item=>item.title.toLocaleLowerCase()==='omint');
   if(!sheet){$('new-sheet-name').value='Omint';await createSheet({preventDefault(){}});sheet=state.sheets.find(item=>item.title.toLocaleLowerCase()==='omint');if(!sheet)return}
   resetSaleForm();const form=$('sale-form');form.elements.prepaga.value=sheet.title;form.elements.capitas.value=String(quote.count);form.elements.plan.value=`Omint ${quote.plan} (${quote.province})`;form.elements.valor.value=String(quote.base+(quote.iva||0));form.elements.nombre.value=name;
@@ -294,21 +462,65 @@ function formatDateRangeValue(value){if(!value)return '';const [year,month,day]=
 function updateDateRangeSummary(target,from,to){const summary=$(target);if(!summary)return;const start=$(from).value,end=$(to).value;summary.textContent=start||end?`Período seleccionado: ${start?formatDateRangeValue(start):'sin fecha inicial'} → ${end?formatDateRangeValue(end):'sin fecha final'}`:'Todo el historial (sin límite de fechas)';summary.classList.toggle('has-range',!!(start||end))}
 function searchFilters(){return{query:$('search-query').value,sheet:$('search-sheet').value,plan:$('search-plan').value.trim(),ingreso:$('search-ingreso').value.trim(),altaFrom:$('search-alta-from').value,altaTo:$('search-alta-to').value}}
 const calculatorSettings=new Map();
-function renderCalculator(){const list=$('calculator-list');if(!list)return;list.querySelectorAll('input[data-field="altaFrom"]').forEach(input=>input._customRange?.popup.remove());list.querySelectorAll('input.flatpickr-input').forEach(input=>input._flatpickr?.destroy());list.replaceChildren();$('calculator-results').classList.add('hidden');const selectAll=$('calculator-select-all');if(selectAll)selectAll.disabled=!state.sheets.length;if(!state.sheets.length){const empty=document.createElement('p');empty.className='empty';empty.textContent='Todavía no hay prepagas.';list.append(empty);return}for(const sheet of state.sheets){const values=calculatorSettings.get(sheet.title)||{},card=document.createElement('div');card.className='panel calculator-card';card.dataset.sheet=sheet.title;const head=document.createElement('div');head.className='calculator-check';const title=document.createElement('strong');title.textContent=sheet.title;const toggle=document.createElement('button');toggle.type='button';toggle.className='calculator-include-toggle';const status=document.createElement('span');status.className='calculator-state';const count=document.createElement('small');count.textContent=`${state.sales.filter(sale=>sale.sheet===sheet.title).length} ventas registradas`;const setSelected=selected=>{calculatorSettings.set(sheet.title,{...calculatorSettings.get(sheet.title),selected});card.classList.toggle('selected',selected);toggle.textContent=selected?'Quitar':'Incluir';status.textContent=selected?'Se calcula':'No se calcula';toggle.setAttribute('aria-pressed',String(selected));toggle.setAttribute('aria-label',selected?`Quitar ${sheet.title} del cálculo`:`Incluir ${sheet.title} en el cálculo`);updateCalculatorSelectAll();refreshCalculatorResults()};toggle.addEventListener('click',()=>setSelected(!calculatorSettings.get(sheet.title)?.selected));head.append(toggle,title,status,count);const grid=document.createElement('div');grid.className='calculator-date-grid';for(const [field,labelText] of [['altaFrom','Alta desde'],['altaTo','Alta hasta']]){const label=document.createElement('label');label.textContent=labelText;const input=document.createElement('input');input.type='date';input.dataset.field=field;input.value=values[field]||'';input.addEventListener('change',()=>{calculatorSettings.set(sheet.title,{...calculatorSettings.get(sheet.title),[field]:input.value});updateDateRangeSummaryForCard(card);refreshCalculatorResults()});label.append(input);grid.append(label)}const summary=document.createElement('p');summary.className='date-range-summary';summary.setAttribute('aria-live','polite');summary.dataset.rangeSummary='';card.append(head,grid,summary);list.append(card);setSelected(!!values.selected);initSpanishDates(card);updateDateRangeSummaryForCard(card)}updateCalculatorSelectAll()}
-function updateCalculatorSelectAll(){const button=$('calculator-select-all');if(!button)return;const total=state.sheets.length,selected=state.sheets.filter(sheet=>calculatorSettings.get(sheet.title)?.selected).length;button.textContent=total&&selected===total?'Quitar todas':'Incluir todas';button.setAttribute('aria-pressed',String(total>0&&selected===total))}
-function refreshCalculatorResults(){if(!$('calculator-results').classList.contains('hidden')){if(!state.sheets.some(sheet=>calculatorSettings.get(sheet.title)?.selected)){$('calculator-results').classList.add('hidden');return}calculatePeriods()}}
+const teamCalculatorSettings=new Map();
+function calculatorBook(){
+  return isLeaderBook()?teamSellers.find(seller=>seller.id===$('calculator-seller').value)?.book:state;
+}
+function currentCalculatorSettings(){
+  if(!isLeaderBook())return calculatorSettings;
+  const id=$('calculator-seller').value;
+  if(!teamCalculatorSettings.has(id))teamCalculatorSettings.set(id,new Map());
+  return teamCalculatorSettings.get(id);
+}
+function updateSellerSelect(select,placeholder,sellers){
+  const value=select.value;
+  select.replaceChildren(new Option(placeholder,''),...sellers.map(seller=>new Option(seller.name,seller.id)));
+  select.value=sellers.some(seller=>seller.id===value)?value:'';
+}
+function renderCalculator(){const list=$('calculator-list'),leader=isLeaderBook(),picker=$('calculator-seller');
+  $('calculator-seller-row').classList.toggle('hidden',!leader);
+  if(leader)updateSellerSelect(picker,'Elegí un vendedor',teamSellers.filter(seller=>seller.book));
+  const book=calculatorBook(),settings=currentCalculatorSettings();
+  $('calculator-workspace').classList.toggle('hidden',!book);
+  list.querySelectorAll('input[data-field="altaFrom"]').forEach(input=>input._customRange?.popup.remove());list.querySelectorAll('input.flatpickr-input').forEach(input=>input._flatpickr?.destroy());list.replaceChildren();$('calculator-results').classList.add('hidden');if(!book)return;const selectAll=$('calculator-select-all');if(selectAll)selectAll.disabled=!book.sheets.length;if(!book.sheets.length){const empty=document.createElement('p');empty.className='empty';empty.textContent='Todavía no hay prepagas.';list.append(empty);return}for(const sheet of book.sheets){const values=settings.get(sheet.title)||{},card=document.createElement('div');card.className='panel calculator-card';card.dataset.sheet=sheet.title;const head=document.createElement('div');head.className='calculator-check';const title=document.createElement('strong');title.textContent=sheet.title;const toggle=document.createElement('button');toggle.type='button';toggle.className='calculator-include-toggle';const status=document.createElement('span');status.className='calculator-state';const count=document.createElement('small');count.textContent=`${book.sales.filter(sale=>sale.sheet===sheet.title).length} ventas registradas`;const setSelected=selected=>{settings.set(sheet.title,{...settings.get(sheet.title),selected});card.classList.toggle('selected',selected);toggle.textContent=selected?'Quitar':'Incluir';status.textContent=selected?'Se calcula':'No se calcula';toggle.setAttribute('aria-pressed',String(selected));toggle.setAttribute('aria-label',selected?`Quitar ${sheet.title} del cálculo`:`Incluir ${sheet.title} en el cálculo`);updateCalculatorSelectAll();refreshCalculatorResults()};toggle.addEventListener('click',()=>setSelected(!settings.get(sheet.title)?.selected));head.append(toggle,title,status,count);const grid=document.createElement('div');grid.className='calculator-date-grid';for(const [field,labelText] of [['altaFrom','Alta desde'],['altaTo','Alta hasta']]){const label=document.createElement('label');label.textContent=labelText;const input=document.createElement('input');input.type='date';input.dataset.field=field;input.value=values[field]||'';input.addEventListener('change',()=>{settings.set(sheet.title,{...settings.get(sheet.title),[field]:input.value});updateDateRangeSummaryForCard(card);refreshCalculatorResults()});label.append(input);grid.append(label)}const summary=document.createElement('p');summary.className='date-range-summary';summary.setAttribute('aria-live','polite');summary.dataset.rangeSummary='';card.append(head,grid,summary);list.append(card);setSelected(!!values.selected);initSpanishDates(card);updateDateRangeSummaryForCard(card)}updateCalculatorSelectAll()}
+function updateCalculatorSelectAll(){const book=calculatorBook(),settings=currentCalculatorSettings();if(!book)return;const button=$('calculator-select-all');if(!button)return;const total=book.sheets.length,selected=book.sheets.filter(sheet=>settings.get(sheet.title)?.selected).length;button.textContent=total&&selected===total?'Quitar todas':'Incluir todas';button.setAttribute('aria-pressed',String(total>0&&selected===total))}
+function refreshCalculatorResults(){const book=calculatorBook(),settings=currentCalculatorSettings();if(!book)return;if(!$('calculator-results').classList.contains('hidden')){if(!book.sheets.some(sheet=>settings.get(sheet.title)?.selected)){$('calculator-results').classList.add('hidden');return}calculatePeriods()}}
 function updateDateRangeSummaryForCard(card){const inputs=card.querySelectorAll('input[data-field]'),summary=card.querySelector('[data-range-summary]');if(!summary)return;const start=inputs[0]?.value||'',end=inputs[1]?.value||'';summary.textContent=start||end?`Período seleccionado: ${start?formatDateRangeValue(start):'sin fecha inicial'} → ${end?formatDateRangeValue(end):'sin fecha final'}`:'Período: sin límite de fechas';summary.classList.toggle('has-range',!!(start||end))}
-function periodSummary(sheetTitle,ranges,includePaid=false){const matching=state.sales.filter(sale=>sale.sheet===sheetTitle&&(includePaid||!salePaid(sale))&&inDateRange(sale.values[0],ranges.altaFrom,ranges.altaTo));const entries=matching.map(sale=>({sale,gain:saleGain(sale)}));return{entries,count:entries.length,missing:entries.filter(item=>item.gain===null).length,total:entries.reduce((sum,item)=>sum+(item.gain||0),0)}}
-async function markCalculatedPaid(rows){if(state.busy||!rows.length)return;if(!confirm(`¿Estás seguro de marcar como pagadas las ${rows.length} ventas pendientes incluidas en este cálculo?`))return;try{state.busy=true;const sheets=new Map(state.sheets.map(sheet=>[sheet.title,sheet]));if(rows.some(row=>!sheets.has(row.sheet)))throw Error('Una prepaga ya no existe. Actualizá los datos y calculá de nuevo.');let styleOk=true;if(state.mode==='local'){for(const row of rows){const ws=state.book.Sheets[row.sheet];putLocalCell(ws,0,PAID_COLUMN,'Pagado');putLocalCell(ws,row.row-1,PAID_COLUMN,'Sí');const range=XLSX.utils.decode_range(ws['!ref']||'A1:O1');range.e.r=Math.max(range.e.r,row.row-1);range.e.c=Math.max(range.e.c,PAID_COLUMN);ws['!ref']=XLSX.utils.encode_range(range)}rebuildLocal();await downloadLocal()}else{const requests=[];for(const title of new Set(rows.map(row=>row.sheet))){const sheet=sheets.get(title);requests.push({updateCells:{start:{sheetId:sheet.sheetId,rowIndex:0,columnIndex:PAID_COLUMN},rows:[{values:[cell('Pagado')]}],fields:'userEnteredValue'}})}for(const row of rows){const sheet=sheets.get(row.sheet);requests.push({updateCells:{start:{sheetId:sheet.sheetId,rowIndex:row.row-1,columnIndex:PAID_COLUMN},rows:[{values:[cell('Sí')]}],fields:'userEnteredValue'}})}await sheetsApi(':batchUpdate',{method:'POST',body:JSON.stringify({requests})});styleOk=await refresh()}toast(styleOk?`${rows.length} ventas marcadas como pagadas.`:'Estados guardados; revisá el diseño en Inicio.',!styleOk);$('calculator-results').classList.add('hidden')}catch(error){toast(error.message,true)}finally{state.busy=false;renderResults()}}
-function calculatePeriods(){const selected=state.sheets.filter(sheet=>calculatorSettings.get(sheet.title)?.selected);if(!selected.length)return toast('Elegí al menos una prepaga para ver el total.',true);for(const sheet of selected){const ranges=calculatorSettings.get(sheet.title);if(ranges.altaFrom&&ranges.altaTo&&ranges.altaFrom>ranges.altaTo){$('calculator-results').classList.add('hidden');return toast(`Revisá las fechas de ${sheet.title}: “desde” debe ser anterior a “hasta”.`,true)}}const breakdown=$('calculator-breakdown');breakdown.replaceChildren();let grand=0;const results=[];for(const sheet of selected){const result=periodSummary(sheet.title,calculatorSettings.get(sheet.title),$('calculator-include-paid').checked);grand+=result.total;results.push({sheet,result})}const overview=document.createElement('details');overview.className='calculator-overview';const totalRow=document.createElement('summary');totalRow.className='calculator-overview-row';const totalLabel=document.createElement('span');totalLabel.textContent='Total combinado';const totalAmount=document.createElement('strong');totalAmount.textContent=displayMoney(grand);const hint=document.createElement('small');hint.textContent=`Ver total de cada prepaga (${results.length})`;const totalInfo=document.createElement('span');totalInfo.className='calculator-overview-info';totalInfo.append(totalLabel,hint);totalRow.append(totalInfo,totalAmount);overview.append(totalRow);const branches=document.createElement('div');branches.className='calculator-branches';for(const {sheet,result} of results){const group=document.createElement('details');group.className='calculator-result-group';const row=document.createElement('summary');row.className='calculator-result-row';const info=document.createElement('div');const title=document.createElement('strong');title.textContent=sheet.title;const detail=document.createElement('small');detail.textContent=`${result.count} venta${result.count===1?'':'s'}${result.missing?` · ${result.missing} sin ganancia calculable`:''}`;info.append(title,detail);const amount=document.createElement('b');amount.textContent=displayMoney(result.total);const right=document.createElement('span');right.className='calculator-result-right';const arrow=document.createElement('span');arrow.className='calculator-result-arrow';arrow.setAttribute('aria-hidden','true');arrow.textContent='⌄';right.append(amount,arrow);row.append(info,right);group.append(row);const list=document.createElement('div');list.className='calculator-sale-list';if(!result.entries.length){const empty=document.createElement('p');empty.className='calculator-sale-empty';empty.textContent='No hay ventas en este período.';list.append(empty)}for(const {sale,gain} of result.entries){const item=document.createElement('div');item.className='calculator-sale';const data=document.createElement('div'),name=document.createElement('strong'),meta=document.createElement('small'),money=document.createElement('b');name.textContent=sale.values[1]||'Sin nombre';meta.textContent=`${displayDate(sale.date)} · ${sale.values[4]||'Sin plan'}`;money.textContent=gain===null?'Sin ganancia calculable':displayMoney(gain);data.append(name,meta);item.append(data,money);list.append(item)}group.append(list);branches.append(group)}overview.append(branches);breakdown.append(overview);const pending=results.flatMap(({result})=>result.entries.map(entry=>entry.sale)).filter(sale=>!salePaid(sale));const mark=document.createElement('button');mark.type='button';mark.className='button primary calculator-mark-paid';mark.textContent='Marcar ventas como pagadas';mark.disabled=!pending.length;mark.addEventListener('click',()=>markCalculatedPaid(pending));breakdown.append(mark);$('calculator-results').classList.remove('hidden')}
+function periodSummary(sheetTitle,ranges,includePaid=false,book=state){const matching=book.sales.filter(sale=>sale.sheet===sheetTitle&&(includePaid||!salePaid(sale))&&inDateRange(sale.values[0],ranges.altaFrom,ranges.altaTo));const entries=matching.map(sale=>({sale,gain:saleGain(sale)}));return{entries,count:entries.length,missing:entries.filter(item=>item.gain===null).length,total:entries.reduce((sum,item)=>sum+(item.gain||0),0)}}
+async function markCalculatedPaid(rows){if(state.busy||!rows.length)return;if(!confirm(`¿Estás seguro de marcar como pagadas las ${rows.length} ventas pendientes incluidas en este cálculo?`))return;try{state.busy=true;
+    if(isLeaderBook()){
+      const book=normalizeGoogleBook(await readGoogleBook(state.sheetId));
+      if(rows.some(row=>!sameSaleValues(book.rows.get(row.sheet)?.[row.row-1]||[],row.values)))throw Error('Las ventas cambiaron en Google. Actualizá los datos y calculá de nuevo.');
+    }
+    const sheets=new Map(state.sheets.map(sheet=>[sheet.title,sheet]));if(rows.some(row=>!sheets.has(row.sheet)))throw Error('Una prepaga ya no existe. Actualizá los datos y calculá de nuevo.');let styleOk=true;if(state.mode==='local'){for(const row of rows){const ws=state.book.Sheets[row.sheet];putLocalCell(ws,0,PAID_COLUMN,'Pagado');putLocalCell(ws,row.row-1,PAID_COLUMN,'Sí');const range=XLSX.utils.decode_range(ws['!ref']||'A1:O1');range.e.r=Math.max(range.e.r,row.row-1);range.e.c=Math.max(range.e.c,PAID_COLUMN);ws['!ref']=XLSX.utils.encode_range(range)}rebuildLocal();await downloadLocal()}else{const requests=[];for(const title of new Set(rows.map(row=>row.sheet))){const sheet=sheets.get(title);requests.push({updateCells:{start:{sheetId:sheet.sheetId,rowIndex:0,columnIndex:PAID_COLUMN},rows:[{values:[cell('Pagado')]}],fields:'userEnteredValue'}})}for(const row of rows){const sheet=sheets.get(row.sheet);requests.push({updateCells:{start:{sheetId:sheet.sheetId,rowIndex:row.row-1,columnIndex:PAID_COLUMN},rows:[{values:[cell('Sí')]}],fields:'userEnteredValue'}})}await sheetsApi(':batchUpdate',{method:'POST',body:JSON.stringify({requests})});styleOk=await refresh()}toast(styleOk?`${rows.length} ventas marcadas como pagadas.`:'Estados guardados; revisá el diseño en Inicio.',!styleOk);$('calculator-results').classList.add('hidden')}catch(error){toast(error.message,true)}finally{state.busy=false;renderResults()}}
+function calculatePeriods(){const book=calculatorBook(),settings=currentCalculatorSettings();if(!book)return;const sellerId=isLeaderBook()?$('calculator-seller').value:null;const selected=book.sheets.filter(sheet=>settings.get(sheet.title)?.selected);if(!selected.length)return toast('Elegí al menos una prepaga para ver el total.',true);for(const sheet of selected){const ranges=settings.get(sheet.title);if(ranges.altaFrom&&ranges.altaTo&&ranges.altaFrom>ranges.altaTo){$('calculator-results').classList.add('hidden');return toast(`Revisá las fechas de ${sheet.title}: “desde” debe ser anterior a “hasta”.`,true)}}const breakdown=$('calculator-breakdown');breakdown.replaceChildren();let grand=0;const results=[];for(const sheet of selected){const result=periodSummary(sheet.title,settings.get(sheet.title),$('calculator-include-paid').checked,book);grand+=result.total;results.push({sheet,result})}const overview=document.createElement('details');overview.className='calculator-overview';const totalRow=document.createElement('summary');totalRow.className='calculator-overview-row';const totalLabel=document.createElement('span');totalLabel.textContent='Total combinado';const totalAmount=document.createElement('strong');totalAmount.textContent=displayMoney(grand);const hint=document.createElement('small');hint.textContent=`Ver total de cada prepaga (${results.length})`;const totalInfo=document.createElement('span');totalInfo.className='calculator-overview-info';totalInfo.append(totalLabel,hint);totalRow.append(totalInfo,totalAmount);overview.append(totalRow);const branches=document.createElement('div');branches.className='calculator-branches';for(const {sheet,result} of results){const group=document.createElement('details');group.className='calculator-result-group';const row=document.createElement('summary');row.className='calculator-result-row';const info=document.createElement('div');const title=document.createElement('strong');title.textContent=sheet.title;const detail=document.createElement('small');detail.textContent=`${result.count} venta${result.count===1?'':'s'}${result.missing?` · ${result.missing} sin ganancia calculable`:''}`;info.append(title,detail);const amount=document.createElement('b');amount.textContent=displayMoney(result.total);const right=document.createElement('span');right.className='calculator-result-right';const arrow=document.createElement('span');arrow.className='calculator-result-arrow';arrow.setAttribute('aria-hidden','true');arrow.textContent='⌄';right.append(amount,arrow);row.append(info,right);group.append(row);const list=document.createElement('div');list.className='calculator-sale-list';if(!result.entries.length){const empty=document.createElement('p');empty.className='calculator-sale-empty';empty.textContent='No hay ventas en este período.';list.append(empty)}for(const {sale,gain} of result.entries){const item=document.createElement('div');item.className='calculator-sale';const data=document.createElement('div'),name=document.createElement('strong'),meta=document.createElement('small'),money=document.createElement('b');name.textContent=sale.values[1]||'Sin nombre';meta.textContent=`${displayDate(sale.date)} · ${sale.values[4]||'Sin plan'}`;money.textContent=gain===null?'Sin ganancia calculable':displayMoney(gain);data.append(name,meta);item.append(data,money);list.append(item)}group.append(list);branches.append(group)}overview.append(branches);breakdown.append(overview);const pending=results.flatMap(({result})=>result.entries.map(entry=>entry.sale)).filter(sale=>!salePaid(sale));const mark=document.createElement('button');mark.type='button';mark.className='button primary calculator-mark-paid';mark.textContent='Marcar ventas como pagadas';mark.disabled=!pending.length;mark.addEventListener('click',()=>{if(state.busy||(sellerId&&!activateSeller(sellerId)))return;markCalculatedPaid(pending)});breakdown.append(mark);$('calculator-results').classList.remove('hidden')}
 function renderResults(){
-  const filters=searchFilters(),results=state.sales.filter(row=>matchesSearch(row,filters));
+  const leader=isLeaderBook(),picker=$('search-seller'),prepaga=$('search-sheet');
+  $('search-seller-row').classList.toggle('hidden',!leader);
+  $('search-seller-heading').classList.toggle('hidden',!leader);
+  if(leader)updateSellerSelect(picker,'Todos los vendedores',teamSellers.filter(seller=>seller.book));
+  const sellers=leader?teamSellers.filter(seller=>seller.book&&(!picker.value||picker.value===seller.id)):[{book:state}];
+  const names=[...new Set(sellers.flatMap(seller=>seller.book.sheets.map(sheet=>sheet.title)))];
+  const previous=prepaga.value;
+  prepaga.replaceChildren(new Option('Todas las prepagas',''),...names.map(name=>new Option(name,name)));
+  if(names.includes(previous))prepaga.value=previous;
+  const filters=searchFilters(),results=sellers.flatMap(seller=>seller.book.sales.filter(row=>matchesSearch(row,filters)).map(row=>({row,seller})));
+  const runSaleAction=(seller,action)=>{
+    if(state.busy||(leader&&!activateSeller(seller.id)))return;
+    action();
+  };
   const labels=['Prepaga','Alta','Cliente','DNI','Teléfono','Cápitas','Ingreso','Plan','Valor del plan','Bonificaciones','Ganancia','Multiplicador'];
   $('result-count').textContent=`${results.length} venta${results.length===1?'':'s'}`;
   const body=$('results-body');body.replaceChildren();
-  for(const row of results){
+  for(const {row,seller} of results){
     const v=row.values,tr=document.createElement('tr'),phone=String(v[12]||'').trim();
     const values=[row.sheet,row.date,v[1]||'—',v[8]||'—',phone||'—',v[2]||'—',v[3]||'—',v[4]||'—',displayMoney(v[5]),v[10]===''||v[10]===undefined?'—':displayMoney(v[10]),v[7]!==''&&v[7]!==undefined?realDisplay(row,v[7]):displayMoney(v[6]),v[11]===''||v[11]===undefined?'—':`${v[11]}%`];
+    if(leader){
+      const cell=document.createElement('td');
+      cell.dataset.label='Vendedor';
+      cell.textContent=seller.name;
+      tr.append(cell);
+    }
     values.forEach((value,index)=>{
       const td=document.createElement('td');td.dataset.label=labels[index];
       if(index===4&&phone){
@@ -317,8 +529,8 @@ function renderResults(){
       tr.append(td);
     });
     const paid=salePaid(row),status=document.createElement('td'),button=document.createElement('button');
-    status.dataset.label='Pago';button.type='button';button.className=`payment-button${paid?' is-paid':''}`;button.textContent=paid?'✓ Pagada':'Marcar pagada';button.setAttribute('aria-label',`${paid?'Marcar pendiente':'Marcar pagada'}: ${v[1]||'venta'} de ${row.sheet}`);button.title=paid?'Hacer clic para volver a pendiente':'Marcar esta venta como pagada';button.addEventListener('click',()=>setSalePaid(row,!paid));status.append(button);tr.classList.toggle('paid-sale',paid);
-    const actions=document.createElement('td'),actionButtons=document.createElement('div'),edit=document.createElement('button'),remove=document.createElement('button');actions.dataset.label='Acciones';actionButtons.className='sale-actions';edit.type='button';edit.className='icon-button edit-button';edit.innerHTML=PREPAGA_ICONS.edit;edit.title='Editar venta';edit.setAttribute('aria-label','Editar venta de '+(v[1]||'cliente')+' en '+row.sheet);edit.addEventListener('click',()=>editSale(row));remove.type='button';remove.className='icon-button danger delete-button';remove.innerHTML=PREPAGA_ICONS.delete;remove.title='Eliminar venta';remove.setAttribute('aria-label','Eliminar venta de '+(v[1]||'cliente')+' en '+row.sheet);remove.addEventListener('click',()=>deleteSale(row));actionButtons.append(edit,remove);actions.append(actionButtons);tr.append(status,actions);body.append(tr);
+    status.dataset.label='Pago';button.type='button';button.className=`payment-button${paid?' is-paid':''}`;button.textContent=paid?'✓ Pagada':'Marcar pagada';button.setAttribute('aria-label',`${paid?'Marcar pendiente':'Marcar pagada'}: ${v[1]||'venta'} de ${row.sheet}`);button.title=paid?'Hacer clic para volver a pendiente':'Marcar esta venta como pagada';button.addEventListener('click',()=>runSaleAction(seller,()=>setSalePaid(row,!paid)));status.append(button);tr.classList.toggle('paid-sale',paid);
+    const actions=document.createElement('td'),actionButtons=document.createElement('div'),edit=document.createElement('button'),remove=document.createElement('button');actions.dataset.label='Acciones';actionButtons.className='sale-actions';edit.type='button';edit.className='icon-button edit-button';edit.innerHTML=PREPAGA_ICONS.edit;edit.title='Editar venta';edit.setAttribute('aria-label','Editar venta de '+(v[1]||'cliente')+' en '+row.sheet);edit.addEventListener('click',()=>runSaleAction(seller,()=>editSale(row)));remove.type='button';remove.className='icon-button danger delete-button';remove.innerHTML=PREPAGA_ICONS.delete;remove.title='Eliminar venta';remove.setAttribute('aria-label','Eliminar venta de '+(v[1]||'cliente')+' en '+row.sheet);remove.addEventListener('click',()=>runSaleAction(seller,()=>deleteSale(row)));actionButtons.append(edit,remove);actions.append(actionButtons);tr.append(status,actions);body.append(tr);
   }
   $('empty-results').classList.toggle('hidden',results.length>0);
 }
@@ -340,13 +552,61 @@ async function ensureMonthlyTables(){
     if(requests.length)await sheetsApi(':batchUpdate',{method:'POST',body:JSON.stringify({requests})});
   }
 }
-function renderLeaderMonth(){
-  const panel=$('leader-monthly');if(!panel)return;const active=state.mode==='google'&&state.profile==='leader';panel.classList.toggle('hidden',!active);if(!active)return;
-  const month=$('leader-month').value,sales=state.sales.filter(sale=>dateISO(sale.values[0]).slice(0,7)===month);let total=0,missing=0;const container=$('leader-month-breakdown');container.replaceChildren();
-  for(const sheet of state.sheets){const group=sales.filter(sale=>sale.sheet===sheet.title);if(!group.length)continue;let sum=0;for(const sale of group){const gain=saleGain(sale);if(gain===null)missing++;else sum+=gain}total+=sum;const item=document.createElement('p');item.textContent=sheet.title+': '+displayMoney(sum)+' · '+group.length+' ventas';container.append(item)}
-  $('leader-month-total').textContent='Total del mes: '+displayMoney(total)+' · '+sales.length+' ventas'+(missing?' · '+missing+' sin ganancia calculable':'')+'. Incluye ventas pagadas.';
+function sellerMetrics(sales,now=new Date()){
+  const current=formatLocalISO(now).slice(0,7);
+  const dates=sales.map(sale=>dateISO(sale.values[0])).filter(date=>isoLocalDate(date)).sort();
+  const months=dates.map(date=>date.slice(0,7)).filter(month=>month<=current);
+  const first=months[0];
+  const monthIndex=month=>Number(month.slice(0,4))*12+Number(month.slice(5,7));
+  return {
+    current:months.filter(month=>month===current).length,
+    average:first?months.length/(monthIndex(current)-monthIndex(first)+1):null,
+    total:sales.length,
+    latest:dates.at(-1)
+  };
 }
 
+function renderSellers(){
+  const list=$('seller-list');
+  list.replaceChildren();
+  if(!teamSellers.length){
+    const empty=document.createElement('p');
+    empty.className='empty';
+    empty.textContent='Todavía no hay vendedores.';
+    list.append(empty);
+    return;
+  }
+  const decimal=new Intl.NumberFormat('es-AR',{maximumFractionDigits:1});
+  for(const seller of teamSellers){
+    const card=document.createElement('article'),name=document.createElement('h3');
+    card.className='panel seller-card';
+    name.textContent=seller.name;
+    card.append(name);
+    if(seller.book){
+      const {current,average,total,latest}=sellerMetrics(seller.book.sales);
+      const metrics=document.createElement('dl');
+      const values=[
+        ['Ventas este mes',current],
+        ['Promedio mensual',average===null?'—':decimal.format(average)],
+        ['Ventas totales',total],
+        ['Última alta registrada',latest?displayDate(latest):'—']
+      ];
+      for(const [label,value] of values){
+        const group=document.createElement('div'),term=document.createElement('dt'),detail=document.createElement('dd');
+        term.textContent=label;
+        detail.textContent=value;
+        group.append(term,detail);
+        metrics.append(group);
+      }
+      card.append(metrics);
+    }else{
+      const message=document.createElement('p');
+      message.textContent='No se pudo cargar la planilla.';
+      card.append(message);
+    }
+    list.append(card);
+  }
+}
 
 function updateProfileControls(){
   const leader=state.profile==='leader',button=$('profile-switch');
@@ -361,25 +621,56 @@ function openProfileDialog(){
   $('profile-dialog').showModal();
 }
 async function switchProfile(){
-  if(state.busy||!state.token||!state.canLead)return;$('profile-dialog').close();state.busy=true;
+  if(state.busy||!state.token||!state.canLead)return;
+  $('profile-dialog').close();
+  state.busy=true;
   const previous=state.profile,previousFolder=state.folderId,next=previous==='leader'?'seller':'leader';
   try{
-    if(state.token){
-      state.profile=next;
-      try{await listGoogleBooks()}catch(error){state.profile=previous;state.folderId=previousFolder;throw error}
-    }else state.profile=next;
-    localStorage.setItem('ventas-profile',next);$('new-book-name').value=next==='leader'?'':'Ventas de prepagas';
-    resetSaleForm();state.mode=null;state.sheetId='';state.book=null;state.sheets=[];state.rows=new Map();state.sales=[];calculatorSettings.clear();sourceStatus();
-    if(state.token){
-      const last=localStorage.getItem('ventas-last-'+next+'-'+state.userId)||(next==='seller'?localStorage.getItem('ventas-last-'+state.userId):null);
-      if(last&&Array.from($('drive-sheet-select').options).some(option=>option.value===last)){await chooseGoogleBook(last);return}
-      showView('setup');toast(next==='leader'?'Elegí o creá un vendedor.':'Elegí o creá una planilla.');
-    }else{showView('setup');toast('Conectá Google para usar este perfil.')}
-  }catch(error){updateProfileControls();toast(error.message,true)}finally{state.busy=false}
+    state.profile=next;
+    try{
+      if(next==='leader')await loadTeam();
+      else await listGoogleBooks();
+    }catch(error){
+      if(state.token){state.profile=previous;state.folderId=previousFolder}
+      throw error;
+    }
+    localStorage.setItem('ventas-profile',next);
+    resetSaleForm();
+    calculatorSettings.clear();
+    teamCalculatorSettings.clear();
+    $('calculator-seller').value='';
+    $('search-seller').value='';
+    if(next==='leader'){
+      showView('home');
+    }else{
+      teamSellers=[];
+      state.mode=null;
+      state.book=null;
+      activateSeller('');
+      sourceStatus();
+      await openLastSellerBook();
+    }
+  }catch(error){updateProfileControls();updateGoogleSessionUI();toast(error.message,true)}finally{state.busy=false}
 }
-async function openLeaderCreate(){
-  if(state.busy||state.profile!=='leader'||state.mode!=='google')return;
-  state.busy=true;try{await listGoogleBooks();$('new-book-name').value='';showView('setup');$('new-book-name').focus()}catch(error){toast(error.message,true)}finally{state.busy=false}
+
+async function openPrepagas(){
+  if(state.busy)return;
+  if(isLeaderBook()&&!(await selectSaleSeller('¿De qué vendedor querés modificar las prepagas?')))return;
+  showView('create');
+}
+
+async function refreshWorkspace(){
+  if(state.busy)return;
+  state.busy=true;
+  try{
+    if(isLeaderBook()){
+      await loadTeam();
+      renderSellers();
+    }else{
+      const ok=await refresh();
+      toast(ok?'Datos actualizados.':'Datos actualizados; revisá el diseño en Inicio.',!ok);
+    }
+  }catch(error){toast(error.message,true)}finally{state.busy=false}
 }
 
 function init(){
@@ -393,7 +684,11 @@ function init(){
   }
   setNavigationVisible(localStorage.getItem('ventas-nav-visible')!=='false');
   menuToggle.addEventListener('click',()=>setNavigationVisible(document.body.classList.contains('nav-hidden')));
-  document.querySelectorAll('[data-view]').forEach(el=>el.addEventListener('click',()=>showView(el.dataset.view)));
+  document.querySelectorAll('[data-view]').forEach(el=>el.addEventListener('click',()=>{
+    if(el.dataset.view==='add')openNewSale();
+    else if(el.dataset.view==='create')openPrepagas();
+    else showView(el.dataset.view);
+  }));
   const moreToggle=$('nav-more-toggle'),moreMenu=$('nav-more-menu');
   moreToggle.addEventListener('click',()=>{const opening=moreMenu.classList.contains('hidden');moreMenu.classList.toggle('hidden',!opening);moreToggle.setAttribute('aria-expanded',String(opening))});
   document.addEventListener('click',event=>{if(!moreMenu.contains(event.target)&&!moreToggle.contains(event.target)){moreMenu.classList.add('hidden');moreToggle.setAttribute('aria-expanded','false')}});
@@ -403,11 +698,11 @@ function init(){
   const theme=localStorage.getItem('ventas-theme')==='dark'?'dark':'light';setTheme(theme);
   $('theme-button').addEventListener('click',()=>setTheme(document.body.classList.contains('dark')?'light':'dark'));
   $('settings-button').addEventListener('click',()=>{if(state.busy)return;if(editingSale)resetSaleForm();if(state.token){showView('setup');return}localStorage.removeItem('ventas-google-session');state.mode=null;sourceStatus();showView('source')});
-  $('google-signout').addEventListener('click',()=>{if(state.busy)return;localStorage.removeItem('ventas-google-session');state.token=null;state.canLead=false;state.profile='seller';state.userId=null;state.mode=null;state.sheetId='';state.book=null;state.fileName='';state.sheets=[];state.rows.clear();state.sales=[];sourceStatus();updateGoogleSessionUI();showView('setup');toast('Sesión de Google cerrada.')});
+  $('google-signout').addEventListener('click',()=>{if(state.busy)return;localStorage.removeItem('ventas-google-session');state.token=null;state.canLead=false;state.profile='seller';state.userId=null;state.mode=null;state.sheetId='';state.book=null;state.fileName='';state.sheets=[];state.rows=new Map();state.sales=[];teamSellers=[];teamCalculatorSettings.clear();state.folderId='';sourceStatus();updateGoogleSessionUI();showView('setup');toast('Sesión de Google cerrada.')});
   $('choose-google').addEventListener('click',()=>showView('setup'));$('choose-local').addEventListener('click',()=>showView('local'));$('pending-local').addEventListener('click',()=>showView('local'));
   $('direct-pending').classList.toggle('hidden',!!APP_GOOGLE_CLIENT_ID);$('direct-connect').disabled=!APP_GOOGLE_CLIENT_ID;
-  $('profile-switch').addEventListener('click',openProfileDialog);$('profile-cancel').addEventListener('click',()=>$('profile-dialog').close());$('profile-confirm').addEventListener('click',switchProfile);document.querySelectorAll('.leader-create-nav').forEach(button=>button.addEventListener('click',openLeaderCreate));$('leader-month').addEventListener('change',renderLeaderMonth);
-  $('direct-connect').addEventListener('click',connectGoogle);$('direct-open').addEventListener('click',()=>chooseGoogleBook($('drive-sheet-select').value).catch(error=>toast(error.message,true)));$('direct-create').addEventListener('click',createGoogleBook);
+  $('profile-switch').addEventListener('click',openProfileDialog);$('profile-cancel').addEventListener('click',()=>$('profile-dialog').close());$('profile-confirm').addEventListener('click',switchProfile);$('calculator-seller').addEventListener('change',renderCalculator);$('search-seller').addEventListener('change',renderResults);$('create-seller-form').addEventListener('submit',createGoogleBook);$('team-loading').addEventListener('cancel',event=>event.preventDefault());
+  $('direct-connect').addEventListener('click',connectGoogle);$('direct-open').addEventListener('click',async()=>{if(state.busy)return;state.busy=true;try{await chooseGoogleBook($('drive-sheet-select').value)}catch(error){toast(error.message,true)}finally{state.busy=false}});$('direct-create').addEventListener('click',createGoogleBook);
   $('open-local').addEventListener('click',openLocal);$('create-local').addEventListener('click',createLocal);$('download-excel').addEventListener('click',()=>downloadLocal().catch(error=>toast(error.message,true)));
   $('apply-sheet-style').addEventListener('click',async()=>{if(state.busy)return;state.busy=true;$('apply-sheet-style').disabled=true;try{const ok=await refresh({forceAll:true});toast(ok?'Diseño aplicado a la planilla.':'Revisá el mensaje de diseño en Inicio.',!ok)}catch(error){styleStatus(`No se pudo aplicar el diseño: ${error.message}`,true);toast(error.message,true)}finally{state.busy=false;$('apply-sheet-style').disabled=false}});
   $('sale-form').addEventListener('submit',saveSale);$('create-form').addEventListener('submit',createSheet);
@@ -419,11 +714,11 @@ function init(){
   $('sale-form').elements.fecha.addEventListener('input',()=>{altaManuallyChanged=true});
   $('sale-form').elements.fecha.addEventListener('change',()=>{altaManuallyChanged=true});
   for(const id of ['search-query','search-plan','search-ingreso','search-alta-from','search-alta-to'])$(id).addEventListener('input',()=>{renderResults()});
-  updateDateRangeSummary('search-date-range','search-alta-from','search-alta-to');$('search-sheet').addEventListener('change',renderResults);$('clear-filters').addEventListener('click',()=>{for(const id of ['search-query','search-plan','search-ingreso','search-alta-from','search-alta-to']){const el=$(id);if(el._flatpickr)el._flatpickr.clear();else el.value=''}const range=$('search-alta-from')._customRange;if(range){range.start='';range.end='';range.fromVisible.value='';range.toVisible.value='';renderCustomRangeCalendar(range)}$('search-sheet').value='';updateDateRangeSummary('search-date-range','search-alta-from','search-alta-to');renderResults()});
-  $('calculate-button').addEventListener('click',calculatePeriods);$('calculator-select-all').addEventListener('click',()=>{const select=state.sheets.some(sheet=>!calculatorSettings.get(sheet.title)?.selected);for(const sheet of state.sheets){calculatorSettings.set(sheet.title,{...calculatorSettings.get(sheet.title),selected:select});const card=[...$('calculator-list').children].find(item=>item.dataset.sheet===sheet.title);if(card){const toggle=card.querySelector('.calculator-include-toggle');card.classList.toggle('selected',select);toggle.textContent=select?'Quitar':'Incluir';card.querySelector('.calculator-state').textContent=select?'Se calcula':'No se calcula';toggle.setAttribute('aria-pressed',String(select));toggle.setAttribute('aria-label',select?`Quitar ${sheet.title} del cálculo`:`Incluir ${sheet.title} en el cálculo`)}}updateCalculatorSelectAll();refreshCalculatorResults()});$('calculator-include-paid').addEventListener('change',refreshCalculatorResults);
+  updateDateRangeSummary('search-date-range','search-alta-from','search-alta-to');$('search-sheet').addEventListener('change',renderResults);$('clear-filters').addEventListener('click',()=>{for(const id of ['search-query','search-plan','search-ingreso','search-alta-from','search-alta-to']){const el=$(id);if(el._flatpickr)el._flatpickr.clear();else el.value=''}const range=$('search-alta-from')._customRange;if(range){range.start='';range.end='';range.fromVisible.value='';range.toVisible.value='';renderCustomRangeCalendar(range)}$('search-sheet').value='';$('search-seller').value='';updateDateRangeSummary('search-date-range','search-alta-from','search-alta-to');renderResults()});
+  $('calculate-button').addEventListener('click',calculatePeriods);$('calculator-select-all').addEventListener('click',()=>{const book=calculatorBook(),settings=currentCalculatorSettings();if(!book)return;const select=book.sheets.some(sheet=>!settings.get(sheet.title)?.selected);for(const sheet of book.sheets){settings.set(sheet.title,{...settings.get(sheet.title),selected:select});const card=[...$('calculator-list').children].find(item=>item.dataset.sheet===sheet.title);if(card){const toggle=card.querySelector('.calculator-include-toggle');card.classList.toggle('selected',select);toggle.textContent=select?'Quitar':'Incluir';card.querySelector('.calculator-state').textContent=select?'Se calcula':'No se calcula';toggle.setAttribute('aria-pressed',String(select));toggle.setAttribute('aria-label',select?`Quitar ${sheet.title} del cálculo`:`Incluir ${sheet.title} en el cálculo`)}}updateCalculatorSelectAll();refreshCalculatorResults()});$('calculator-include-paid').addEventListener('change',refreshCalculatorResults);
   $('calculator-include-paid').addEventListener('change',()=>$('calculator-results').classList.add('hidden'));
   $('add-discount').addEventListener('click',()=>addDiscount());$('sale-value').addEventListener('input',updateGain);$('sale-multiplier').addEventListener('input',updateGain);$('quote-file').addEventListener('change',importQuote);
-  for(const id of ['refresh-button','search-refresh'])$(id).addEventListener('click',()=>refresh().then(ok=>toast(ok?'Datos actualizados.':'Datos actualizados; revisá el diseño en Inicio.',!ok)).catch(error=>toast(error.message,true)));
-  state.profile='seller';state.canLead=false;updateProfileControls();$('leader-month').value=suggestedAltaDate('').slice(0,7);$('sale-form').elements.fecha.value=suggestedAltaDate('');initSpanishDates();sourceStatus();showView('source');finishStartup();
+  for(const id of ['refresh-button','search-refresh','refresh-sellers'])$(id).addEventListener('click',refreshWorkspace);
+  state.profile='seller';state.canLead=false;updateProfileControls();$('sale-form').elements.fecha.value=suggestedAltaDate('');initSpanishDates();sourceStatus();showView('source');finishStartup();
 }
 document.addEventListener('DOMContentLoaded',()=>{try{init()}catch(error){console.error('Error al iniciar la aplicación:',error);window.startupFailed()}});
