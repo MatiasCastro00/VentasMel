@@ -11,7 +11,8 @@
   <link rel="icon" type="image/svg+xml" href="branding/icono-principal.svg">
   <link rel="apple-touch-icon" sizes="180x180" href="branding/icono-256.png">
   <link rel="stylesheet" href="vendor/flatpickr.min.css">
-  <link rel="stylesheet" href="styles.css?v=20261117team">
+  <link rel="stylesheet" href="styles.css?v=20261125j">
+  <link rel="stylesheet" href="cuaderno.css?v=20261125k">
   <script>
     try {
       const session=JSON.parse(localStorage.getItem('ventas-google-session')||'null');
@@ -36,60 +37,223 @@
   <script src="vendor/pdf-lib.min.js" defer></script>
   <script src="omint-logo-data.js" defer></script>
   <script src="omint-pdf.js?v=20261114iva-20261106download" defer></script>
-  <script src="omint-quote.js?v=20261114iva" defer></script>
+  <script src="omint-quote.js?v=20261125e" defer></script>
   <script src="excel.js?v=20261113local" defer></script>
   <script src="vendor/pdf.worker.classic.js" defer></script>
   <script src="vendor/pdf.classic.js" defer></script>
   <script src="quote.js?v=20261113local" defer></script>
-  <script src="app.js?v=20261117team" defer></script>
+  <script src="sales-search.js?v=20261125i" defer></script>
+  <script src="app.js?v=20261125i" defer></script>
 </head>
-<body>
-  <div id="startup-loading" class="startup-loading" role="status" aria-live="polite"><div class="startup-loading-card"><span class="brand-icon startup-logo" aria-hidden="true"></span><span class="startup-loading-brand">PulsoGestión</span><span class="startup-spinner" aria-hidden="true"></span><strong id="startup-title">Preparando tu espacio</strong><p id="startup-message">Estamos recuperando tu sesión y tus datos.</p><a class="startup-retry" href="">Volver a cargar</a></div></div>
+<body class="choosing-source">
+  <script>try { document.body.classList.toggle('dark',localStorage.getItem('ventas-theme')==='dark') } catch (_) {}</script>
+  <svg class="icon-library" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+    <symbol id="i-home" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="8" rx="1.4"/><rect x="14" y="3" width="7" height="5" rx="1.4"/><rect x="3" y="15" width="7" height="6" rx="1.4"/><rect x="14" y="12" width="7" height="9" rx="1.4"/></symbol>
+    <symbol id="i-add" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="3"/><path d="M8 12h8m-4-4v8"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></symbol>
+    <symbol id="i-calculator" viewBox="0 0 24 24"><rect x="5" y="2.5" width="14" height="19" rx="2"/><path d="M8 7h8M8 11h1m5 0h1m-7 4h1m5 0h1m-7 3h1m5 0h1"/></symbol>
+    <symbol id="i-quote" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6zM14 3v5h4M9 12h6m-6 4h5"/></symbol>
+    <symbol id="i-create" viewBox="0 0 24 24"><path d="M3 7.5h18v12H3zM4 7V5h7l2 2"/><path d="M9 12h6"/></symbol>
+    <symbol id="i-sellers" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 20v-3a6 6 0 0 1 12 0v3m1-15a3 3 0 0 1 0 6m2 2a5 5 0 0 1 3 5v2"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 4v16M4 12h16"/></symbol>
+    <!-- Stationery for the workbook sections. Moving pieces are drawn separately. -->
+    <symbol id="art-ledger" viewBox="0 0 144 94">
+      <path fill="#366150" d="m8 28 57-12 69 8-4 55-57-4-56 10z"/>
+      <path fill="#bdbea0" d="m12 24 55-12 64 9-5 54-54-5-53 11z"/>
+      <path fill="#f0dfb4" d="m14 20 38-9q10-2 18 2l3 53q-7-4-18-2l-35 9z"/>
+      <path fill="#f9edcd" d="M70 13q10-6 23-3l35 6-3 53-40-6q-6 0-12 3z"/>
+      <g fill="none" stroke="#b3b496" stroke-width="1.3"><path d="m23 32 35-8m-34 15 35-8m-34 15 34-8m-33 15 33-7m-32 14 32-7M82 25l36 5m-36 2 36 5m-35 2 34 5m-34 2 33 5m-33 2 32 5"/><path stroke="#c4af84" d="m70 14 3 51"/></g>
+    </symbol>
+    <symbol id="art-ribbon" viewBox="0 0 144 94">
+      <path fill="#ae6246" d="m95 11 9 1-3 58-4-4-5 3z"/><path d="m97 13-3 51" stroke="#d99f78"/>
+    </symbol>
+    <symbol id="art-turning-page" viewBox="0 0 144 94">
+      <path fill="#f7e7c2" d="M70 13q10-6 23-3l35 6-3 53-40-6q-6 0-12 3z"/>
+      <path d="m82 24 34 5m-34 3 33 5m-32 3 31 5m-31 3 26 4" fill="none" stroke="#b3b496" stroke-width="1.3"/>
+    </symbol>
+    <symbol id="art-file-back" viewBox="0 0 144 94">
+      <path fill="#527760" d="M20 68 16 25q0-3 4-4l29-4 9 5 53-7q4-1 5 4l6 43z"/>
+      <path fill="#dbaf76" d="m23 28 82-11 5 45-81 11z"/>
+    </symbol>
+    <symbol id="art-index" viewBox="0 0 144 94">
+      <path fill="#f2e5be" d="m30 21 61-7 13 10 3 38-73 8z"/><path fill="#d8c8a2" d="m91 14 2 12 11-2z"/>
+      <path d="m40 32 38-5m-37 11 51-6m-50 13 50-6" stroke="#9da584" fill="none" stroke-width="1.6"/>
+    </symbol>
+    <symbol id="art-file-front" viewBox="0 0 144 94">
+      <path fill="#71957b" d="m20 38 97-12q5-1 4 4l-4 36q0 4-5 5L28 82q-4 0-5-4z"/>
+      <path d="m25 42 92-12" stroke="#9db49a" fill="none"/>
+      <path fill="#eee1be" d="m34 48 36-4 .5 10-36 4z"/><path d="m39 52 22-3" stroke="#7d886d" stroke-width="1.3"/>
+    </symbol>
+    <symbol id="art-sheet" viewBox="0 0 144 94">
+      <path fill="#a99574" d="m30 21 69-7 8 59-69 10z"/><path fill="#d6c699" d="m26 16 73-7 5 60-73 9z"/>
+      <path fill="#f3e5bf" d="m23 12 71-6 6 59-71 10z"/><path d="m36 25 35-4" stroke="#4a6b56" stroke-width="3"/>
+      <g stroke="#a7ad91" stroke-width="1.3"><path d="m37 34 43-5m-42 13 43-5m-42 13 44-5m-43 13 29-3"/></g>
+      <path d="m40 16-1-10q0-5 5-5t6 5l1 9q0 4-3 5t-4-3l-1-9" fill="none" stroke="#927a4c" stroke-width="2.2" stroke-linecap="round"/>
+    </symbol>
+    <symbol id="art-pencil" viewBox="0 0 144 94">
+      <g transform="rotate(37 97 44)"><rect x="93" y="6" width="8" height="7" rx="2" fill="#bc7d69"/><path fill="#d5b77b" d="M93 12h8v5h-8z"/><path fill="#a4673d" d="M93 17h8v51l-4 11-4-11z"/><path fill="#c28b4f" d="M94 17h3v51h-3z"/><path fill="#e8cda2" d="m93 67 4 2 4-2-4 12z"/><path fill="#345045" d="m95.4 75 1.6 4 1.6-4z"/></g>
+    </symbol>
+    <symbol id="art-machine" viewBox="0 0 144 94">
+      <g transform="rotate(-8 74 54)"><rect x="40" y="28" width="65" height="53" rx="6" fill="#355948"/><rect x="40" y="24" width="65" height="53" rx="6" fill="#789582"/>
+        <path d="M50 32h44" stroke="#345a49" stroke-width="3" stroke-linecap="round"/>
+        <rect x="50" y="38" width="43" height="8" rx="1" fill="#c3cdab"/>
+        <path d="M51 54h7m5 0h7m5 0h7m-31 9h7m5 0h7m5 0h7" stroke="#e4dcc1" stroke-width="5" stroke-linecap="round"/>
+        <rect x="88" y="51" width="7" height="15" rx="2" fill="#bb7957"/></g>
+    </symbol>
+    <symbol id="art-receipt" viewBox="0 0 144 94">
+      <g transform="rotate(-8 74 54)"><path fill="#f1e5bd" d="M53 32V7l4 2 4-3 4 2 4-3 4 2 4-3 4 2 4-3 4 2v27z"/><path d="M58 15h24m-24 5h23m-23 5h15" stroke="#a3aa90" stroke-width="1.4"/></g>
+    </symbol>
+  </svg>
+  <div id="startup-loading" class="startup-loading">
+    <div class="loading-card">
+      <div class="loading-cover" aria-hidden="true">
+        <span class="loading-signature"><img src="branding/variantes/icono-oscuro-profundo.svg" width="28" height="28" alt="">PulsoGestión</span>
+        <svg class="loading-ledger" viewBox="0 0 144 94" focusable="false"><use href="#art-ledger"></use><use class="loading-page" href="#art-turning-page"></use><use href="#art-ribbon"></use></svg>
+      </div>
+      <div class="loading-copy">
+        <div role="status" aria-live="polite" aria-atomic="true"><h2 id="startup-title">Preparando tu espacio</h2><p id="startup-message">Estamos recuperando tu sesión y tus datos.</p></div>
+        <a class="startup-retry" href="">Volver a cargar</a>
+      </div>
+    </div>
+  </div>
   <noscript>Activá JavaScript para usar la aplicación.</noscript>
   <div class="shell" inert>
     <aside class="sidebar">
       <button class="brand" id="brand-home" type="button" aria-label="PulsoGestión: ir al inicio"><span class="brand-icon" aria-hidden="true"></span><span class="brand-name">Pulso<span>Gestión</span><small>CLIENTES · ALTAS · COMISIONES</small></span></button>
-      <div class="nav-label">ESPACIO DE TRABAJO</div>
+      <div class="nav-label">Registro</div>
       <nav id="main-navigation" aria-label="Navegación principal">
-        <button class="nav-item active" data-view="home"><span>▦</span> Inicio</button>
-        <button class="nav-item desktop-nav-item" data-view="add"><span>＋</span> Cargar venta</button>
-        <button class="nav-item" data-view="search"><span>⌕</span> Buscar ventas</button>
-        <button class="nav-item" data-view="calculator"><span>∑</span> Calculadora</button>
-        <button class="nav-item desktop-nav-item" data-view="quote"><span>◇</span> Cotización</button>
-        <button class="nav-item desktop-nav-item" data-view="create"><span>▤</span> Modificar prepagas</button><button class="nav-item desktop-nav-item leader-create-nav hidden" data-view="sellers" type="button"><span>＋</span> Vendedores</button>
+        <button class="nav-item active" data-view="home"><svg class="ui-icon" aria-hidden="true"><use href="#i-home"></use></svg> Inicio</button>
+        <button class="nav-item desktop-nav-item" data-view="add"><svg class="ui-icon" aria-hidden="true"><use href="#i-add"></use></svg> Cargar venta</button>
+        <button class="nav-item" data-view="search"><svg class="ui-icon" aria-hidden="true"><use href="#i-search"></use></svg> Buscar ventas</button>
+        <div class="nav-label tools-label">Herramientas</div>
+        <button class="nav-item" data-view="calculator"><svg class="ui-icon" aria-hidden="true"><use href="#i-calculator"></use></svg> Calculadora</button>
+        <button class="nav-item desktop-nav-item" data-view="quote"><svg class="ui-icon" aria-hidden="true"><use href="#i-quote"></use></svg> Cotización</button>
+        <button class="nav-item desktop-nav-item" data-view="create"><svg class="ui-icon" aria-hidden="true"><use href="#i-create"></use></svg> Modificar prepagas</button><button class="nav-item desktop-nav-item leader-create-nav hidden" data-view="sellers" type="button"><svg class="ui-icon" aria-hidden="true"><use href="#i-sellers"></use></svg> Vendedores</button>
+        <button class="nav-more-toggle phone-nav-item" id="nav-more-toggle" type="button" aria-label="Más opciones" aria-expanded="false" aria-controls="nav-more-menu"><svg class="ui-icon" aria-hidden="true"><use href="#i-plus"></use></svg></button>
         <div class="nav-more-menu phone-nav-item hidden" id="nav-more-menu" aria-label="Más opciones">
-          <button class="nav-item" data-view="add"><span>＋</span> Cargar venta</button>
-          <button class="nav-item" data-view="quote"><span>◇</span> Cotización</button>
-          <button class="nav-item" data-view="create"><span>▤</span> Modificar prepagas</button><button class="nav-item leader-create-nav hidden" data-view="sellers" type="button"><span>＋</span> Vendedores</button>
+          <button class="nav-item" data-view="add"><svg class="ui-icon" aria-hidden="true"><use href="#i-add"></use></svg> Cargar venta</button>
+          <button class="nav-item" data-view="quote"><svg class="ui-icon" aria-hidden="true"><use href="#i-quote"></use></svg> Cotización</button>
+          <button class="nav-item" data-view="create"><svg class="ui-icon" aria-hidden="true"><use href="#i-create"></use></svg> Modificar prepagas</button><button class="nav-item leader-create-nav hidden" data-view="sellers" type="button"><svg class="ui-icon" aria-hidden="true"><use href="#i-sellers"></use></svg> Vendedores</button>
         </div>
       </nav>
-      <button class="nav-more-toggle phone-nav-item" id="nav-more-toggle" type="button" aria-label="Más opciones" aria-expanded="false" aria-controls="nav-more-menu">＋</button>
       <div class="sidebar-bottom"><div class="status-dot"></div><div><strong id="sidebar-status">Sin archivo</strong><small id="sidebar-sub">Elegí Google Drive o Excel local</small></div></div>
     </aside>
 
     <main class="main">
-      <header class="topbar"><div class="topbar-start"><button class="topbar-brand" id="topbar-brand-home" type="button" aria-label="PulsoGestión: ir al inicio"><span class="brand-icon" aria-hidden="true"></span><span class="brand-name">Pulso<span>Gestión</span><small>CLIENTES · ALTAS · COMISIONES</small></span></button><div class="breadcrumb"><span id="breadcrumb-section">SELECCIÓN DE ARCHIVO</span><span id="breadcrumb-separator" class="hidden">/</span><strong id="breadcrumb-current" class="hidden"></strong></div></div><div class="top-actions"><span class="sync-indicator" id="sync-indicator">● Sin archivo</span><button class="theme-toggle" id="theme-button" type="button" aria-label="Activar modo oscuro" title="Activar modo oscuro" aria-pressed="false">☾</button><button class="link-button" id="settings-button" type="button">Cambiar archivo</button><button class="link-button hidden" id="profile-switch" type="button">Cambiar a líder</button></div></header>
+      <header class="topbar"><div class="topbar-start"><button class="menu-toggle" id="menu-toggle" type="button" aria-controls="main-navigation" aria-expanded="true" aria-label="Ocultar navegación"><svg class="ui-icon" aria-hidden="true"><use href="#i-menu"></use></svg></button><button class="topbar-brand" id="topbar-brand-home" type="button" aria-label="PulsoGestión: ir al inicio"><span class="brand-icon" aria-hidden="true"></span><span class="brand-name">Pulso<span>Gestión</span><small>CLIENTES · ALTAS · COMISIONES</small></span></button><div class="breadcrumb"><span id="breadcrumb-section">SELECCIÓN DE ARCHIVO</span><span id="breadcrumb-separator" class="hidden">/</span><strong id="breadcrumb-current" class="hidden"></strong></div></div><div class="top-actions"><span class="sync-indicator" id="sync-indicator">● Sin archivo</span><button class="theme-toggle" id="theme-button" type="button" aria-label="Activar modo oscuro" title="Activar modo oscuro" aria-pressed="false">☾</button><button class="link-button" id="settings-button" type="button">Cambiar archivo</button><button class="link-button hidden" id="profile-switch" type="button">Cambiar a líder</button></div></header>
       <div class="content">
         <section id="source-view" class="view" aria-labelledby="source-title">
-          <div class="eyebrow">BIENVENIDO</div><h1 id="source-title">¿Dónde querés guardar tus ventas<span class="accent">?</span></h1><p class="lead">Elegí tu propio Google Drive para usar la planilla desde cualquier dispositivo, o trabajá con un Excel en este dispositivo.</p>
-          <div class="source-grid"><button id="choose-google" class="source-card"><span class="source-icon">☁</span><strong>Conectar Google Drive</strong><span id="google-card-description">La conexión simple de Google está en preparación. Cada persona usará su propia cuenta.</span><b id="google-card-action">Ver estado →</b></button><button id="choose-local" class="source-card"><span class="source-icon local-icon">▤</span><strong>Usar Excel local</strong><span>Abrí un archivo .xlsx de tu dispositivo o creá uno nuevo. Guardá los cambios descargando el Excel.</span><b>Elegir Excel →</b></button></div>
+          <div class="notebook-cover">
+            <div class="cover-copy">
+              <h1 id="source-title">Tu cuaderno<br><em>de ventas.</em></h1>
+              <p>Registrá altas, consultá clientes y llevá la cuenta de tus comisiones.</p>
+            </div>
+            <div class="cover-art" aria-hidden="true">
+              <div class="notebook">
+                <div class="index-tabs"><i></i><i></i><i></i></div>
+                <div class="notebook-pages"></div>
+                <div class="notebook-front">
+                  <div class="bookplate"><img src="branding/variantes/simbolo-verde-transparente.svg" width="28" height="28" alt=""><span>PulsoGestión</span></div>
+                  <div class="book-title">Registro<br><em>de altas</em></div>
+                  <div class="book-ruling"></div>
+                </div>
+                <div class="elastic"></div>
+              </div>
+            </div>
+          </div>
+          <div class="source-heading"><h2>¿Dónde guardás tus ventas?</h2><p>Elegí una opción para abrir o crear tu planilla.</p></div>
+          <div class="source-grid">
+            <button id="choose-google" class="source-card" type="button">
+              <span class="provider-icon drive" aria-hidden="true"><svg viewBox="0 0 48 48"><path fill="#0f9d58" d="M16 5h15L10 41 2 28z"/><path fill="#fbbc04" d="M16 5h15l15 26H31z"/><path fill="#4285f4" d="M10 41l8-13h26l2 3-6 10z"/><path fill="#188038" d="M16 5l7.5 13L31 5z"/><path fill="#1967d2" d="M2 28h16l-8 13z"/><path fill="#ea4335" d="M31 28h13l2 3h-13z"/></svg></span>
+              <strong>Google Drive</strong>
+              <span class="source-description">Guardá las ventas en tu cuenta y accedé a la planilla desde cualquier dispositivo.</span>
+              <b>Conectar Drive <span aria-hidden="true">→</span></b>
+            </button>
+            <button id="choose-local" class="source-card" type="button">
+              <span class="provider-icon excel" aria-hidden="true"><svg viewBox="0 0 48 48"><path fill="#21a366" d="M16 6h26v36H16z"/><path fill="#107c41" d="M16 18h26v12H16z"/><path fill="#185c37" d="M16 30h26v12H16z"/><path fill="#33c481" d="M29 6h13v12H29z"/><rect x="3" y="13" width="24" height="23" rx="2" fill="#107c41"/><path fill="#fff" d="M8 18h4l3 5 3-5h4l-5 7 5 7h-4l-3-5-3 5H8l5-7z"/></svg></span>
+              <strong>Excel local</strong>
+              <span class="source-description">Trabajá con un archivo .xlsx en este dispositivo. Cada cambio descarga una copia actualizada.</span>
+              <b>Elegir Excel <span aria-hidden="true">→</span></b>
+            </button>
+          </div>
         </section>
-        <section id="setup-view" class="view hidden" aria-labelledby="setup-title"><div class="eyebrow">GOOGLE DRIVE</div><h1 id="setup-title">Conectar Google</h1><p class="lead">Elegí cómo entrar a tus planillas.</p><div class="source-grid"><div class="panel"><h2>Inicio directo</h2><p class="muted">Elegí tu cuenta de Google desde esta página.</p><div id="google-session" class="google-session hidden"><span>Sesión iniciada con Google.</span><button id="google-signout" class="button outline" type="button">Cerrar sesión</button></div><button id="direct-connect" class="button primary" type="button">Elegir cuenta de Google</button><p id="direct-pending" class="muted hidden">El inicio directo todavía necesita la configuración inicial del administrador.</p><div id="google-picker" class="hidden"><label id="book-picker-label">Planillas de ventasApp<select id="drive-sheet-select"></select></label><button id="direct-open" class="button outline" type="button">Abrir planilla</button><label id="new-book-label">Nombre del archivo nuevo<input id="new-book-name" value="Ventas de prepagas" maxlength="120"></label><button id="direct-create" class="button primary" type="button">Crear archivo</button></div></div></div><p><button id="pending-local" class="button outline" type="button">Usar Excel local</button></p></section>
-        <section id="local-view" class="view hidden" aria-labelledby="local-title"><div class="eyebrow">EXCEL LOCAL</div><h1 id="local-title">Tu Excel en este dispositivo<span class="accent">.</span></h1><p class="lead">Abrí un archivo .xlsx existente o creá uno nuevo. Los datos se procesan en este navegador.</p><div class="source-grid"><div class="panel local-panel"><span class="source-icon local-icon">▤</span><h2>Abrir un Excel</h2><p class="muted">Elegí el archivo desde tu dispositivo. El original no se cambia automáticamente.</p><input id="local-file" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"><button id="open-local" class="button primary" type="button">Abrir archivo</button></div><div class="panel local-panel"><span class="source-icon">＋</span><h2>Crear un Excel</h2><p class="muted">Comenzá con una planilla nueva y agregá las prepagas que necesites.</p><input id="local-book-name" type="text" value="Ventas de prepagas" aria-label="Nombre del nuevo Excel"><button id="create-local" class="button primary" type="button">Crear Excel</button></div></div><p class="local-note">En modo local, después de cada cambio se descargará el Excel actualizado. Conservá la última versión descargada.</p></section>
+        <section id="setup-view" class="view entry-view hidden" aria-labelledby="setup-title">
+          <button type="button" class="entry-back" data-entry-back>← Volver</button>
+          <div class="entry-panel">
+            <header class="entry-heading"><div><h1 id="setup-title">Tus planillas en Drive</h1><p>Guardá las ventas en tu cuenta de Google y abrí la misma planilla desde otro dispositivo.</p></div>
+              <svg class="chapter-art art-file" viewBox="0 0 144 94" aria-hidden="true"><use href="#art-file-back"></use><use class="piece-index" href="#art-index"></use><use href="#art-file-front"></use></svg>
+            </header>
+            <div class="entry-body">
+              <div id="drive-intro"><h2>Conectá tu cuenta</h2><p>Si ya tenés una cartilla en Drive, la abrimos al entrar. Si es tu primera vez, podés crear una.</p>
+                <button id="direct-connect" class="button primary" type="button">Elegir cuenta de Google</button>
+                <p id="direct-pending" class="muted hidden">El inicio directo todavía necesita la configuración inicial del administrador.</p>
+              </div>
+              <p id="drive-progress" class="muted hidden" role="status"></p>
+              <div id="google-session" class="google-session hidden"><strong>Cuenta de Google conectada</strong><button id="google-signout" class="link-button" type="button">Cerrar sesión</button></div>
+              <div id="google-picker" class="entry-options hidden">
+                <div><h2>Abrir una planilla</h2><p id="drive-empty" class="muted hidden">Todavía no hay planillas en esta carpeta. Creá una para registrar tu primera venta.</p><label id="book-picker-label">Planillas en ventasApp<select id="drive-sheet-select"></select></label><button id="direct-open" class="button primary" type="button">Abrir planilla</button></div>
+                <div><h2>Crear una planilla</h2><label id="new-book-label">Nombre de la planilla<input id="new-book-name" value="Ventas de prepagas" maxlength="120"></label><button id="direct-create" class="button outline" type="button">Crear en Drive</button></div>
+              </div>
+              <p class="entry-alternative"><button id="pending-local" class="entry-back" type="button">Usar un Excel de este dispositivo →</button></p>
+            </div>
+          </div>
+        </section>
+        <section id="local-view" class="view entry-view hidden" aria-labelledby="local-title">
+          <button type="button" class="entry-back" data-entry-back>← Volver</button>
+          <div class="entry-panel">
+            <header class="entry-heading"><div><h1 id="local-title">Tu archivo Excel</h1><p>Al guardar una venta se descarga una copia actualizada. Para continuar otro día, abrí la última copia.</p></div>
+              <svg class="chapter-art" viewBox="0 0 144 94" aria-hidden="true"><use href="#art-ledger"></use><use class="piece-ribbon" href="#art-ribbon"></use></svg>
+            </header>
+            <div class="entry-body entry-options">
+              <div><h2>Retomar un archivo</h2><p>Elegí la planilla .xlsx con tus ventas. El archivo original queda en tu dispositivo.</p>
+                <input class="hidden" id="local-file" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
+                <button id="open-local" class="button primary" type="button">Elegir y abrir Excel</button></div>
+              <div><h2>Empezar de cero</h2><label>Nombre del nuevo archivo<input id="local-book-name" type="text" value="Ventas de prepagas"></label><button id="create-local" class="button outline" type="button">Crear Excel</button></div>
+            </div>
+          </div>
+        </section>
 
-        <section id="home-view" class="view hidden" aria-labelledby="home-title"><div class="eyebrow">TU ESPACIO DE VENTAS</div><div class="heading-row"><div><h1 id="home-title">Todo en un mismo lugar<span class="accent">.</span></h1><p class="lead">Cargá nuevas ventas, encontrá registros y organizá tus prepagas.</p></div><button class="button outline" id="refresh-button" type="button">↻ Actualizar</button></div>
-          <div class="stats"><div class="stat"><span>VENTAS REGISTRADAS</span><strong id="stat-sales">—</strong><small>En todas las prepagas</small></div><div class="stat"><span>PREPAGAS</span><strong id="stat-sheets">—</strong><small>Pestañas de la planilla</small></div><div class="stat stat-accent"><span>ESTADO DE LA PLANILLA</span><strong id="stat-connection">Sin conectar</strong><small id="stat-updated">Conectá Google para empezar</small></div></div>
-          <h2 class="section-title">¿Qué querés hacer?</h2><div class="action-grid"><button class="action-card" data-view="add"><span class="action-icon mint">＋</span><strong>Cargar venta</strong><span>Agregá una nueva venta a la prepaga correspondiente.</span><b>Empezar <span>↗</span></b></button><button class="action-card" data-view="search"><span class="action-icon blue">⌕</span><strong>Buscar ventas</strong><span>Consultá clientes, fechas, planes e importes.</span><b>Explorar <span>↗</span></b></button><button class="action-card" data-view="calculator"><span class="action-icon mint">∑</span><strong>Calculadora</strong><span>Sumá ganancias por prepaga y período.</span><b>Calcular <span>↗</span></b></button><button class="action-card" data-view="create"><span class="action-icon peach">▤</span><strong>Modificar prepagas</strong><span>Consultá, agregá o cambiá tus prepagas.</span><b>Ver prepagas <span>↗</span></b></button></div>
-          <div class="connected-card"><div><span class="mini-icon">☁</span><strong id="source-summary-title">Archivo listo</strong><p id="connected-description">Tus datos están listos.</p></div><a id="open-sheet" href="#" target="_blank" rel="noopener noreferrer" class="text-link hidden">Abrir planilla ↗</a><button id="download-excel" type="button" class="button outline hidden">Descargar Excel</button></div>
+        <section id="home-view" class="view hidden" aria-labelledby="home-title"><header class="chapter-heading">
+            <div class="chapter-copy"><h1 id="home-title">Resumen de ventas</h1><p class="lead">Cargá nuevas ventas, encontrá registros y organizá tus prepagas.</p></div>
+            <svg class="chapter-art art-ledger" viewBox="0 0 144 94" aria-hidden="true" focusable="false">
+              <use class="piece-ledger" href="#art-ledger"></use>
+              <use class="piece-ribbon" href="#art-ribbon"></use>
+            </svg>
+            <button class="button outline" id="refresh-button" type="button">↻ Actualizar</button>
+          </header>
+          <div class="stats"><button class="stat pending-stat" id="open-pending" type="button"><span>PENDIENTE DE COBRO</span><strong id="pending-amount">—</strong><small id="pending-count">Ver ventas pendientes →</small></button><div class="stat"><span>VENTAS REGISTRADAS</span><strong id="stat-sales">—</strong><small>En todas las prepagas</small></div><div class="stat"><span>PREPAGAS</span><strong id="stat-sheets">—</strong><small>Pestañas de la planilla</small></div><div class="stat stat-accent"><span>ESTADO DE LA PLANILLA</span><strong id="stat-connection">Sin conectar</strong><small id="stat-updated">Conectá Google para empezar</small></div></div>
+          <h2 class="section-title">Herramientas de ventas</h2><div class="action-grid"><button class="action-card" data-view="add"><span class="action-icon mint"><svg class="ui-icon" aria-hidden="true"><use href="#i-add"></use></svg></span><strong>Cargar venta</strong><span>Agregá una nueva venta a la prepaga correspondiente.</span><b>Empezar</b></button><button class="action-card" data-view="search"><span class="action-icon blue"><svg class="ui-icon" aria-hidden="true"><use href="#i-search"></use></svg></span><strong>Buscar ventas</strong><span>Consultá clientes, fechas, planes e importes.</span><b>Explorar</b></button><button class="action-card" data-view="calculator"><span class="action-icon mint"><svg class="ui-icon" aria-hidden="true"><use href="#i-calculator"></use></svg></span><strong>Calculadora</strong><span>Sumá ganancias por prepaga y período.</span><b>Calcular</b></button><button class="action-card" data-view="create"><span class="action-icon peach"><svg class="ui-icon" aria-hidden="true"><use href="#i-create"></use></svg></span><strong>Modificar prepagas</strong><span>Consultá, agregá o cambiá tus prepagas.</span><b>Ver prepagas</b></button></div>
+          <div class="connected-card"><div><span class="mini-icon"><svg class="ui-icon" aria-hidden="true"><use href="#i-create"></use></svg></span><strong id="source-summary-title">Archivo listo</strong><p id="connected-description">Tus datos están listos.</p><p id="local-revision" class="hidden"></p></div><a id="open-sheet" href="#" target="_blank" rel="noopener noreferrer" class="text-link hidden">Abrir planilla ↗</a><button id="download-excel" type="button" class="button outline hidden">Descargar Excel</button></div>
           <div id="sheet-style-card" class="sheet-style-card hidden"><div><strong>Diseño de tu planilla</strong><p id="sheet-style-message" role="status">El diseño se aplica al abrir tu archivo de Google.</p></div><button id="apply-sheet-style" class="button outline" type="button">Aplicar diseño</button></div>
         </section>
 
-        <section id="add-view" class="view hidden" aria-labelledby="add-title"><div class="eyebrow">NUEVO REGISTRO</div><h1 id="add-title">Cargar una venta<span class="accent">.</span></h1><p class="lead" id="add-lead">Completá los datos o subí una cotización de Sancor o Avalian para rellenar nombre, plan, valor y bonificaciones.</p><p class="hidden" id="sale-seller-row">Vendedor <strong id="sale-seller"></strong></p><div class="panel form-panel"><form id="sale-form"><div class="quote-import"><label for="quote-file">Cotización en PDF <em>opcional</em></label><input id="quote-file" type="file" accept=".pdf,application/pdf"><p id="quote-status" role="status">El PDF se lee en este navegador. Revisá los datos antes de guardar.</p></div><div class="form-grid"><label>Prepaga<select name="prepaga" id="sale-sheet" required></select></label><label>Forma de ingreso<input name="ingreso" type="text" list="ingresos" placeholder="Ej. Recibo de sueldo" required><datalist id="ingresos"><option value="Recibo de sueldo"><option value="Monotributo"><option value="Particular"></datalist></label><label>Fecha de alta<input name="fecha" type="date" required><small class="alta-hint">Si no es Particular, se propone el 1 del mes siguiente.</small></label><label>Cápitas<input name="capitas" type="number" min="1" step="1" value="1" required></label><label class="wide">Nombre del cliente<input name="nombre" type="text" placeholder="Nombre y apellido" maxlength="160" required></label><label>DNI<input name="dni" type="text" inputmode="numeric" maxlength="11" placeholder="Solo números" required></label><label>Teléfono<input name="telefono" type="tel" autocomplete="tel" maxlength="30" placeholder="Ej. 11 1234 5678"></label><label>Plan<input name="plan" type="text" placeholder="Ej. Sancor 1500 B" required></label><label>Valor del plan<input name="valor" id="sale-value" type="text" inputmode="decimal" placeholder="Ej. 477.065" required></label><label>Multiplicador de ganancia (%)<input name="multiplicador" id="sale-multiplier" type="number" min="0" step="0.01" value="200" required></label></div><div class="discount-section"><div class="discount-heading"><div><h2>Bonificaciones</h2><p>Podés agregar más de una. En Sancor se toman las de grupo de afinidad; en Avalian, todas las líneas de bonificación del precio.</p></div><button id="add-discount" class="button outline" type="button">＋ Agregar bonificación</button></div><div id="discount-list"></div></div><div class="gain-preview"><span>Ganancia calculada</span><strong id="calculated-gain">—</strong><small>(Valor del plan − bonificaciones) × multiplicador</small></div><div class="form-foot"><p>El DNI no aparece en la cotización y debe ingresarse manualmente.</p><div class="form-actions"><button class="button outline hidden" id="cancel-edit" type="button">Cancelar edición</button><button class="button primary" id="save-sale" type="submit">Guardar venta <span>→</span></button></div></div></form></div></section>
+        <section id="add-view" class="view hidden" aria-labelledby="add-title"><header class="chapter-heading">
+            <div class="chapter-copy"><h1 id="add-title">Cargar una venta<span class="accent">.</span></h1><p class="lead" id="add-lead">Completá los datos o subí una cotización de Sancor o Avalian para rellenar nombre, plan, valor y bonificaciones.</p></div>
+            <svg class="chapter-art art-entry" viewBox="0 0 144 94" aria-hidden="true" focusable="false">
+              <use class="piece-sheet" href="#art-sheet"></use>
+              <use class="piece-pencil" href="#art-pencil"></use>
+            </svg>
+          </header><p class="hidden" id="sale-seller-row">Vendedor <strong id="sale-seller"></strong></p><div class="panel form-panel"><form id="sale-form"><div class="quote-import"><label for="quote-file">Cotización en PDF <em>opcional</em></label><input id="quote-file" type="file" accept=".pdf,application/pdf"><p id="quote-status" role="status">El PDF se lee en este navegador. Revisá los datos antes de guardar.</p></div><button id="create-import-provider" class="button outline hidden" type="button"></button><div class="form-grid"><label>Prepaga<select name="prepaga" id="sale-sheet" required></select></label><label>Forma de ingreso<input name="ingreso" type="text" list="ingresos" placeholder="Ej. Recibo de sueldo" required><datalist id="ingresos"><option value="Recibo de sueldo"><option value="Monotributo"><option value="Particular"></datalist></label><label>Fecha de alta<input name="fecha" type="date" required><small class="alta-hint">Si no es Particular, se propone el 1 del mes siguiente.</small></label><label>Cápitas<input name="capitas" type="number" min="1" step="1" value="1" required></label><label class="wide">Nombre del cliente<input name="nombre" type="text" placeholder="Nombre y apellido" maxlength="160" required></label><label>DNI<input name="dni" type="text" inputmode="numeric" maxlength="11" placeholder="Solo números" required></label><label>Teléfono<input name="telefono" type="tel" autocomplete="tel" maxlength="30" placeholder="Ej. 11 1234 5678"></label><label>Plan<input name="plan" type="text" placeholder="Ej. Sancor 1500 B" required></label><label>Valor del plan<input name="valor" id="sale-value" type="text" inputmode="decimal" placeholder="Ej. 477.065" required></label><label>Multiplicador de ganancia (%)<input name="multiplicador" id="sale-multiplier" type="number" min="0" step="0.01" value="200" required></label></div><div class="discount-section"><div class="discount-heading"><div><h2>Bonificaciones</h2><p>Podés agregar más de una. En Sancor se toman las de grupo de afinidad; en Avalian, todas las líneas de bonificación del precio.</p></div><button id="add-discount" class="button outline" type="button">＋ Agregar bonificación</button></div><div id="discount-list"></div></div><div class="gain-preview"><span>Ganancia calculada</span><strong id="calculated-gain">—</strong><small>(Valor del plan − bonificaciones) × multiplicador</small></div><div class="form-foot"><p>El DNI no aparece en la cotización y debe ingresarse manualmente.</p><div class="form-actions"><button class="button outline hidden" id="cancel-edit" type="button">Cancelar edición</button><button class="button primary" id="save-sale" type="submit">Guardar venta <span>→</span></button><button class="button outline" id="save-another" type="submit">Guardar y cargar otra</button></div></div></form></div></section>
 
-        <section id="search-view" class="view hidden" aria-labelledby="search-title"><div class="eyebrow">CONSULTA</div><h1 id="search-title">Buscar ventas<span class="accent">.</span></h1><p class="lead">Combiná filtros para encontrar las ventas que necesitás.</p><div class="panel search-filters"><label class="search-input"><span>⌕</span><input id="search-query" type="search" placeholder="Cliente, DNI o teléfono"></label><div class="filter-grid"><label>Prepaga<select id="search-sheet"><option value="">Todas las prepagas</option></select></label><label id="search-seller-row" class="hidden">Vendedor<select id="search-seller"></select></label><label>Plan<input id="search-plan" type="search" placeholder="Ej. 1500 B"></label><label>Forma de ingreso<input id="search-ingreso" type="search" placeholder="Ej. Particular"></label><label>Alta desde<input id="search-alta-from" type="date"></label><label>Alta hasta<input id="search-alta-to" type="date"></label></div><div class="filter-actions"><button class="button outline" id="clear-filters" type="button">Limpiar filtros</button><button class="button outline" id="search-refresh" type="button">↻ Actualizar</button></div></div><div class="table-top"><strong id="result-count">0 ventas</strong><span id="data-source-label">Datos de tu archivo</span></div><div class="table-wrap"><table><thead><tr><th id="search-seller-heading" class="hidden">Vendedor</th><th>Prepaga</th><th>Alta</th><th>Cliente</th><th>DNI</th><th>Teléfono</th><th>Cápitas</th><th>Ingreso</th><th>Plan</th><th>Valor del plan</th><th>Bonificaciones</th><th>Ganancia</th><th>Multiplicador</th><th>Pago</th><th>Acciones</th></tr></thead><tbody id="results-body"></tbody></table></div><div id="empty-results" class="empty hidden">No hay ventas que coincidan con la búsqueda.</div></section>
+        <section id="search-view" class="view hidden" aria-labelledby="search-title"><header class="chapter-heading">
+            <div class="chapter-copy"><h1 id="search-title">Buscar ventas<span class="accent">.</span></h1><p class="lead">Combiná filtros para encontrar las ventas que necesitás.</p></div>
+            <svg class="chapter-art art-file" viewBox="0 0 144 94" aria-hidden="true" focusable="false">
+              <use class="piece-file-back" href="#art-file-back"></use>
+              <use class="piece-index" href="#art-index"></use>
+              <use class="piece-file-front" href="#art-file-front"></use>
+            </svg>
+          </header><div class="panel search-filters"><label class="search-input"><svg class="ui-icon" aria-hidden="true"><use href="#i-search"></use></svg><input aria-label="Buscar por cliente, DNI o teléfono" id="search-query" type="search" placeholder="Cliente, DNI o teléfono"></label><details class="search-advanced" id="search-advanced" open><summary id="search-filter-summary">Filtros</summary><div class="filter-grid"><label>Prepaga<select id="search-sheet"><option value="">Todas las prepagas</option></select></label><label>Pago<select id="search-payment"><option value="">Todas</option><option value="pending" selected>Pendientes</option><option value="paid">Pagadas</option></select></label><label id="search-seller-row" class="hidden">Vendedor<select id="search-seller"></select></label><label>Plan<input id="search-plan" type="search" placeholder="Ej. 1500 B"></label><label>Forma de ingreso<input id="search-ingreso" type="search" placeholder="Ej. Particular"></label><label>Alta desde<input id="search-alta-from" type="date"></label><label>Alta hasta<input id="search-alta-to" type="date"></label></div></details><div class="filter-actions"><button class="button outline" id="clear-filters" type="button">Limpiar filtros</button><button class="button outline" id="search-refresh" type="button">↻ Actualizar</button></div></div><div class="list-controls"><label>Ordenar por<select id="sales-order"></select></label><button class="button outline" id="sales-direction" type="button"></button><div class="sales-display-options"><label class="column-choice"><input type="checkbox" id="sales-show-paid">Mostrar pagas</label><label class="column-choice"><input type="checkbox" id="sales-all-columns">Todas las columnas</label></div></div><div class="table-top"><strong id="result-count">0 ventas</strong><span id="data-source-label">Datos de tu archivo</span></div><div class="table-wrap sales-table"><table><thead><tr id="sales-headings"></tr></thead><tbody id="results-body"></tbody></table></div><div id="empty-results" class="empty hidden">No hay ventas que coincidan con la búsqueda.</div></section>
 
         <section id="sellers-view" class="view hidden" aria-labelledby="sellers-title">
-          <h1 id="sellers-title">Vendedores<span class="accent">.</span></h1>
+          <header class="chapter-heading">
+            <div class="chapter-copy"><h1 id="sellers-title">Vendedores<span class="accent">.</span></h1></div>
+            <svg class="chapter-art art-file" viewBox="0 0 144 94" aria-hidden="true" focusable="false">
+              <use class="piece-file-back" href="#art-file-back"></use>
+              <use class="piece-index" href="#art-index"></use>
+              <use class="piece-file-front" href="#art-file-front"></use>
+            </svg>
+          </header>
           <form id="create-seller-form" class="panel seller-create-form">
             <label>Nombre del vendedor<input id="new-seller-name" maxlength="120" required></label>
             <button class="button primary" type="submit">Crear vendedor</button>
@@ -98,21 +262,45 @@
           <p class="muted">Los conteos usan la fecha de alta. El promedio incluye los meses sin ventas desde la primera alta hasta el mes actual.</p>
           <div id="seller-list" class="seller-list"></div>
         </section>
-        <section id="calculator-view" class="view hidden" aria-labelledby="calculator-title"><div class="eyebrow">GANANCIAS</div><h1 id="calculator-title">Calculadora<span class="accent">.</span></h1><p class="lead">Elegí una o varias prepagas y definí un período distinto para cada una. Si dejás las fechas vacías, se cuenta todo su historial. Las ventas pagadas se excluyen, salvo que actives “Contar pagados”.</p><div id="calculator-seller-row" class="panel leader-seller-picker hidden"><label>Vendedor<select id="calculator-seller"></select></label></div><div id="calculator-workspace" class="panel calculator-workspace"><div class="calculator-workspace-heading"><div><h2>Prepagas a calcular</h2><p>Elegí cuáles incluir y definí sus fechas.</p></div><button class="button outline" id="calculator-select-all" type="button">Incluir todas</button></div><div id="calculator-list" class="calculator-list"></div><div class="calculator-actions"><label class="include-paid"><input id="calculator-include-paid" type="checkbox"><span><strong>Contar ventas pagadas</strong><small>Por defecto se calculan solo las pendientes.</small></span></label><button class="button primary" id="calculate-button" type="button">Calcular ganancias</button></div></div><div id="calculator-results" class="hidden"><h2 class="section-title">Tu cálculo</h2><div id="calculator-breakdown"></div></div></section>
+        <section id="calculator-view" class="view hidden" aria-labelledby="calculator-title"><header class="chapter-heading">
+            <div class="chapter-copy"><h1 id="calculator-title">Calculadora<span class="accent">.</span></h1><p class="lead">Elegí una o varias prepagas y definí un período distinto para cada una. Si dejás las fechas vacías, se cuenta todo su historial. Las ventas pagadas se excluyen, salvo que actives “Contar pagados”.</p></div>
+            <svg class="chapter-art art-tally" viewBox="0 0 144 94" aria-hidden="true" focusable="false">
+              <use class="piece-machine" href="#art-machine"></use>
+              <use class="piece-receipt" href="#art-receipt"></use>
+            </svg>
+          </header><div id="calculator-seller-row" class="panel leader-seller-picker hidden"><label>Vendedor<select id="calculator-seller"></select></label></div><div id="calculator-workspace" class="panel calculator-workspace"><div class="calculator-workspace-heading"><div><h2>Prepagas a calcular</h2><p>Elegí cuáles incluir y definí sus fechas.</p></div><button class="button outline" id="calculator-select-all" type="button">Incluir todas</button></div><fieldset class="bulk-period"><legend>Período para todas las prepagas</legend><div class="period-actions"><button class="button outline" data-month-offset="0" type="button">Este mes</button><button class="button outline" data-month-offset="-1" type="button">Mes anterior</button></div><label>Desde<input id="bulk-from" type="date"></label><label>Hasta<input id="bulk-to" type="date"></label><button class="button outline" id="apply-period" type="button">Aplicar a todas</button></fieldset><div id="calculator-list" class="calculator-list"></div><div class="calculator-actions"><label class="include-paid"><input id="calculator-include-paid" type="checkbox"><span><strong>Contar ventas pagadas</strong><small>Por defecto se calculan solo las pendientes.</small></span></label><button class="button primary" id="calculate-button" type="button">Calcular ganancias</button></div></div><div id="calculator-results" class="hidden"><h2 class="section-title">Tu cálculo</h2><div id="calculator-breakdown"></div></div></section>
 
-        <section id="quote-view" class="view hidden" aria-labelledby="quote-title"><div class="eyebrow">PRECIOS DE PLANES</div><h1 id="quote-title">Cotización<span class="accent">.</span></h1><p class="lead">Elegí un plan y agregá los integrantes para calcular el precio del grupo.</p><div class="panel omint-quote"><div class="omint-fields"><label>Prepaga<select id="quote-provider"><option value="Omint">Omint</option></select></label><label>Provincia<select id="quote-province"><option value="">Elegí una provincia</option></select></label><label>Tipo de plan<select id="quote-category" disabled><option value="">Elegí un tipo</option></select></label><label>Plan<select id="quote-plan" disabled><option value="">Elegí un plan</option></select></label></div><div class="omint-members-box"><div class="omint-members-head"><h2>Integrantes</h2><button class="button outline" id="quote-add-member" type="button">＋ Agregar integrante</button></div><div id="quote-members" class="omint-members-list"></div></div><div class="omint-members-box omint-discounts-box"><div class="omint-members-head"><h2>Descuentos</h2><button class="button outline" id="quote-add-discount" type="button">＋ Agregar descuento</button></div><div id="quote-discounts" class="omint-members-list"></div></div><label class="omint-iva-option"><input id="quote-include-iva" type="checkbox"> Agregar IVA (10,5 %) sobre el importe con descuentos</label><div id="quote-result" class="omint-result" aria-live="polite">Elegí provincia y plan para comenzar.</div><div class="omint-pdf-actions"><label>Nombre del potencial asociado<input id="quote-client-name" type="text" placeholder="Nombre para la cotización"></label><button class="button outline" id="quote-load-sale" type="button" disabled>Cargar como venta</button><button class="button primary" id="quote-generate-pdf" type="button" disabled>Generar PDF</button></div><p class="muted">Precios de Omint Empresas vigentes a noviembre de 2026. Marcá la opción de IVA para incluirlo en el total.</p></div></section>
-        <section id="create-view" class="view hidden" aria-labelledby="create-title"><div class="eyebrow">ORGANIZACIÓN</div><h1 id="create-title">Modificar prepagas<span class="accent">.</span></h1><p id="prepaga-seller" class="hidden"></p><p class="lead">Consultá cuántas ventas tiene cada prepaga y administrá sus pestañas.</p><div class="prepaga-layout"><div class="panel prepaga-list-panel"><div class="panel-heading"><h2>Tus prepagas</h2><span id="prepaga-count">0 prepagas</span></div><div id="prepaga-list" class="prepaga-list"></div></div><div class="panel create-panel"><div class="step-number">＋</div><h2>Agregar otra prepaga</h2><p class="muted">Se creará una pestaña con las columnas de ventas.</p><form id="create-form"><label>Nombre de la prepaga<input id="new-sheet-name" type="text" maxlength="31" placeholder="Ej. Sancor" required></label><button class="button primary" type="submit">Agregar prepaga <span>→</span></button></form><hr><h2>Omint</h2><p class="muted">Agregá su página de ventas sin importar un archivo de cotización.</p><button class="button outline" id="create-omint" type="button">Agregar página de Omint</button></div></div></section>
+        <section id="quote-view" class="view hidden" aria-labelledby="quote-title"><header class="chapter-heading">
+            <div class="chapter-copy"><h1 id="quote-title">Cotización<span class="accent">.</span></h1><p class="lead">Elegí un plan y agregá los integrantes para calcular el precio del grupo.</p></div>
+            <svg class="chapter-art art-entry" viewBox="0 0 144 94" aria-hidden="true" focusable="false">
+              <use class="piece-sheet" href="#art-sheet"></use>
+              <use class="piece-pencil" href="#art-pencil"></use>
+            </svg>
+          </header><div class="panel omint-quote"><div class="omint-fields"><label>Prepaga<select id="quote-provider"><option value="Omint">Omint</option></select></label><label>Provincia<select id="quote-province"><option value="">Elegí una provincia</option></select></label><label>Tipo de plan<select id="quote-category" disabled><option value="">Elegí un tipo</option></select></label><label>Plan<select id="quote-plan" disabled><option value="">Elegí un plan</option></select></label></div><div class="omint-members-box"><div class="omint-members-head"><h2>Integrantes</h2><button class="button outline" id="quote-add-member" type="button">＋ Agregar integrante</button></div><div id="quote-members" class="omint-members-list"></div></div><div class="omint-members-box omint-discounts-box"><div class="omint-members-head"><h2>Descuentos</h2><button class="button outline" id="quote-add-discount" type="button">＋ Agregar descuento</button></div><div id="quote-discounts" class="omint-members-list"></div></div><label class="omint-iva-option"><input id="quote-include-iva" type="checkbox"> Agregar IVA (10,5 %) sobre el importe con descuentos</label><div id="quote-result" class="omint-result" aria-live="polite">Elegí provincia y plan para comenzar.</div><section class="quote-compare"><button id="pin-quote" type="button" class="button outline" disabled>Fijar plan para comparar</button><div id="quote-comparison" class="hidden" aria-live="polite"></div></section><div class="omint-pdf-actions"><label>Nombre del potencial asociado<input id="quote-client-name" type="text" placeholder="Nombre para la cotización"></label><button class="button outline" id="quote-load-sale" type="button" disabled>Cargar como venta</button><button class="button primary" id="quote-generate-pdf" type="button" disabled>Generar PDF</button></div><p class="muted">Precios de Omint Empresas vigentes a noviembre de 2026. Marcá la opción de IVA para incluirlo en el total.</p></div></section>
+        <section id="create-view" class="view hidden" aria-labelledby="create-title"><header class="chapter-heading">
+            <div class="chapter-copy"><h1 id="create-title">Modificar prepagas<span class="accent">.</span></h1><p id="prepaga-seller" class="hidden"></p><p class="lead">Consultá cuántas ventas tiene cada prepaga y administrá sus pestañas.</p></div>
+            <svg class="chapter-art art-file" viewBox="0 0 144 94" aria-hidden="true" focusable="false">
+              <use class="piece-file-back" href="#art-file-back"></use>
+              <use class="piece-index" href="#art-index"></use>
+              <use class="piece-file-front" href="#art-file-front"></use>
+            </svg>
+          </header><div class="prepaga-layout"><div class="panel prepaga-list-panel"><div class="panel-heading"><h2>Tus prepagas</h2><span id="prepaga-count">0 prepagas</span></div><div id="prepaga-list" class="prepaga-list"></div></div><div class="panel create-panel"><div class="step-number">＋</div><h2>Agregar otra prepaga</h2><p class="muted">Se creará una pestaña con las columnas de ventas.</p><form id="create-form"><label>Nombre de la prepaga<input id="new-sheet-name" type="text" maxlength="31" placeholder="Ej. Sancor" required></label><button class="button primary" type="submit">Agregar prepaga <span>→</span></button></form><hr><h2>Omint</h2><p class="muted">Agregá su página de ventas sin importar un archivo de cotización.</p><button class="button outline" id="create-omint" type="button">Agregar página de Omint</button></div></div></section>
       </div>
       <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
-      <dialog id="team-loading" class="duplicate-dialog team-loading" aria-labelledby="team-loading-title">
-        <div class="startup-loading-card" role="status"><span class="startup-spinner" aria-hidden="true"></span><strong id="team-loading-title">Cargando vendedores</strong><p id="team-loading-progress">Estamos buscando las planillas del equipo.</p></div>
+      <dialog id="team-loading" class="team-loading" aria-labelledby="team-loading-title">
+        <div class="loading-card">
+          <div class="loading-cover" aria-hidden="true">
+            <span class="loading-signature"><img src="branding/variantes/icono-oscuro-profundo.svg" width="28" height="28" alt="">PulsoGestión</span>
+            <svg class="loading-ledger" viewBox="0 0 144 94" focusable="false"><use href="#art-ledger"></use><use class="loading-page" href="#art-turning-page"></use><use href="#art-ribbon"></use></svg>
+          </div>
+          <div class="loading-copy" role="status" aria-live="polite" aria-atomic="true"><h2 id="team-loading-title">Cargando vendedores</h2><p id="team-loading-progress">Estamos buscando las planillas del equipo.</p></div>
+        </div>
       </dialog>
       <dialog id="sale-seller-dialog" class="duplicate-dialog" aria-labelledby="sale-seller-title"><form method="dialog"><h2 id="sale-seller-title">¿Para qué vendedor es la venta?</h2><label>Vendedor<select id="sale-seller-select" required autofocus></select></label><div class="dialog-actions"><button class="button primary" type="submit" value="continue">Continuar</button><button class="button outline" type="submit" value="cancel" formnovalidate>Cancelar</button></div></form></dialog>
       <dialog id="profile-dialog" class="duplicate-dialog" aria-labelledby="profile-dialog-title"><h2 id="profile-dialog-title"></h2><p id="profile-dialog-message"></p><div class="dialog-actions"><button id="profile-confirm" class="button primary" type="button">Sí, cambiar perfil</button><button id="profile-cancel" class="button outline" type="button">Cancelar</button></div></dialog>
       <dialog id="duplicate-dialog" class="duplicate-dialog" aria-labelledby="duplicate-title"><h2 id="duplicate-title">Este cliente ya tiene una carga</h2><p id="duplicate-message"></p><label id="duplicate-select-label" class="hidden">Carga a sobrescribir<select id="duplicate-record"></select></label><div class="dialog-actions"><button id="duplicate-new" class="button primary" type="button">Agregar nueva cotización</button><button id="duplicate-overwrite" class="button outline" type="button">Sobrescribir cotización</button><button id="duplicate-cancel" class="button outline" type="button">Cancelar</button></div></dialog>
       <dialog id="delete-sale-dialog" class="duplicate-dialog" aria-labelledby="delete-sale-title"><h2 id="delete-sale-title">Eliminar venta</h2><p id="delete-sale-message"></p><label for="delete-sale-confirmation">Escribí <strong>Eliminar</strong> para confirmar<input id="delete-sale-confirmation" type="text" autocomplete="off" spellcheck="false"></label><div class="dialog-actions"><button id="confirm-delete-sale" class="button danger-button" type="button" disabled>Eliminar venta</button><button id="cancel-delete-sale" class="button outline" type="button">Cancelar</button></div></dialog>
     </main>
-    <button class="menu-toggle" id="menu-toggle" type="button" aria-controls="main-navigation" aria-expanded="true" aria-label="Ocultar navegación" title="Ocultar navegación"><span aria-hidden="true"></span></button>
   </div>
 </body>
 </html>

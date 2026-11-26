@@ -8,6 +8,8 @@ class Element {
 }
 const ids=['include-iva','province','category','plan','members','discounts','result','generate-pdf','load-sale','add-discount','add-member','client-name'];
 const elements=Object.fromEntries(ids.map(id=>['quote-'+id,new Element('quote-'+id)]));
+elements['pin-quote']=new Element('pin-quote');
+elements['quote-comparison']=new Element('quote-comparison');
 const document={getElementById:id=>elements[id],createElement:()=>new Element(),addEventListener(type,fn){if(type==='DOMContentLoaded')this.init=fn}};
 const window=new Element();const context={document,window,Option:function(text,value){this.text=text;this.value=value},Intl,console};vm.createContext(context);
 vm.runInContext(fs.readFileSync('omint-data.js','utf8')+'\nthis.data=OMINT_DATA',context);vm.runInContext(fs.readFileSync('omint-quote.js','utf8'),context);document.init();

@@ -3,7 +3,9 @@ document.addEventListener('DOMContentLoaded',()=>{
   const $=id=>document.getElementById(id);
   const province=$('quote-province'),category=$('quote-category'),plan=$('quote-plan'),members=$('quote-members'),discounts=$('quote-discounts'),result=$('quote-result'),pdfButton=$('quote-generate-pdf'),saleButton=$('quote-load-sale');
   let quote=null;
-  const message=value=>{quote=null;pdfButton.disabled=true;saleButton.disabled=true;result.textContent=value};
+  let pinned=null;
+  const pinButton=$('pin-quote'),comparison=$('quote-comparison');
+  const message=value=>{quote=null;pdfButton.disabled=true;saleButton.disabled=true;result.textContent=value;renderComparison()};
   const restore=document.createElement('button');restore.type='button';restore.className='button outline hidden';restore.textContent='Restaurar 20 % PyME';restore.addEventListener('click',()=>addDiscount(true));$('quote-add-discount').before(restore);
   const groupFor=name=>{
     if(name==='AMBA')return 'AMBA';
@@ -14,6 +16,41 @@ document.addEventListener('DOMContentLoaded',()=>{
   };
   const options=(select,placeholder,values)=>select.replaceChildren(new Option(placeholder,''),...values.map(value=>new Option(value,value)));
   const money=value=>new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS',maximumFractionDigits:0}).format(value);
+  function comparisonContext(){
+    const values=root=>[...root.querySelectorAll('input,select')].map(field=>field.value);
+    return JSON.stringify([province.value,values(members),values(discounts),$('quote-include-iva').checked]);
+  }
+  function renderComparison(){
+    pinButton.disabled=!quote;
+    if(pinned && pinned.context!==comparisonContext()){
+      pinned=null;
+      comparison.classList.remove('hidden');
+      comparison.textContent='Cambiaste las condiciones de la cotización. Volvé a fijar el primer plan para comparar.';
+    }
+    pinButton.textContent=pinned?'Quitar comparación':'Fijar plan para comparar';
+    if(!pinned)return;
+    pinButton.disabled=false;
+    comparison.classList.remove('hidden');
+    const first=pinned.quote;
+    const other=quote && (quote.category!==first.category || quote.plan!==first.plan);
+    const line=document.createElement('strong');
+    line.textContent=first.category+' · '+first.plan+' — '+money(first.total);
+    const pdf=document.createElement('button');
+    pdf.type='button';pdf.className='button outline';pdf.textContent='PDF del plan fijado';
+    pdf.addEventListener('click',()=>generatePdf(first));
+    const difference=document.createElement('p');
+    difference.textContent='Elegí otro plan para comparar con los mismos integrantes, descuentos e IVA.';
+    comparison.replaceChildren(line,pdf,difference);
+    if(other){
+      const delta=quote.total-first.total;
+      difference.textContent=quote.category+' · '+quote.plan+' — '+money(quote.total)+'. '+(delta===0?'Mismo importe.':money(Math.abs(delta))+(delta>0?' más':' menos')+' que el plan fijado.');
+    }
+  }
+  pinButton.addEventListener('click',()=>{
+    if(pinned){pinned=null;comparison.classList.add('hidden');comparison.replaceChildren();}
+    else if(quote)pinned={quote,context:comparisonContext()};
+    renderComparison();
+  });
   const selectedPlans=()=>province.value?(OMINT_DATA.groups[groupFor(province.value)]||[]):[];
   let renderedProvince='',renderedCategory='';
   function syncSelectors(){
@@ -71,13 +108,14 @@ document.addEventListener('DOMContentLoaded',()=>{
     result.replaceChildren();const strong=document.createElement('strong');strong.textContent=`Total con descuentos${ivaRate?' e IVA':''}: ${money(final)}`;const note=document.createElement('span');note.textContent=`Valor del plan: ${money(base)} · Descuentos: ${totalPercent}% · ${count} cápita${count===1?'':'s'} · tramo ${tier.min} a ${tier.max}`;
     const breakdown=document.createElement('div');breakdown.className='omint-capita-breakdown';const heading=document.createElement('b');heading.textContent='Importe por cápita';breakdown.append(heading);
     detail.forEach((price,index)=>{const item=document.createElement('div');item.className='omint-capita-row';const childIndex=people.slice(0,index+1).filter(person=>person.kind==='child').length;const label=people[index].kind==='child'?`Hijo ${childIndex}`:'Adulto / familiar';const title=document.createElement('span');title.textContent=`${index+1}. ${label} · ${people[index].age} años`;const amount=document.createElement('span');amount.textContent=`${money(price)} → ${money(price*(1-totalPercent/100))} con descuentos`;item.append(title,amount);breakdown.append(item)});const tax=document.createElement('span');tax.textContent=ivaRate?`Subtotal con descuentos: ${money(subtotal)} · IVA (10,5 %): ${money(iva)}`:'IVA no incluido';result.append(strong,note,tax,breakdown);
+    renderComparison();
   }
-  async function generatePdf(){if(!quote)return;try{await downloadOmintPdf(quote,$('quote-client-name').value)}catch(error){console.error(error);alert('No se pudo generar el PDF. Volvé a intentarlo.')}}
+  async function generatePdf(selected=quote){if(!selected)return;try{await downloadOmintPdf(selected,$('quote-client-name').value)}catch(error){console.error(error);alert('No se pudo generar el PDF. Volvé a intentarlo.')}}
   options(province,'Elegí una provincia',OMINT_DATA.provinces);
   for(const event of ['input','change']){province.addEventListener(event,syncSelectors);category.addEventListener(event,syncSelectors)}
   // El navegador puede restaurar valores sin emitir change al volver a la página.
   window.addEventListener('pageshow',syncSelectors);
   category.addEventListener('focus',syncSelectors);plan.addEventListener('focus',syncSelectors);
   syncSelectors();
-  $('quote-include-iva').addEventListener('change',calculate);plan.addEventListener('change',calculate);$('quote-add-member').addEventListener('click',addMember);$('quote-add-discount').addEventListener('click',()=>addDiscount());pdfButton.addEventListener('click',generatePdf);saleButton.addEventListener('click',()=>{if(quote)document.dispatchEvent(new CustomEvent('omint:load-sale',{detail:{quote:{...quote,reductions:quote.reductions.map(item=>({...item}))},name:$('quote-client-name').value.trim()}}))});addDiscount(true);
+  $('quote-include-iva').addEventListener('change',calculate);plan.addEventListener('change',calculate);$('quote-add-member').addEventListener('click',addMember);$('quote-add-discount').addEventListener('click',()=>addDiscount());pdfButton.addEventListener('click',()=>generatePdf());saleButton.addEventListener('click',()=>{if(quote)document.dispatchEvent(new CustomEvent('omint:load-sale',{detail:{quote:{...quote,reductions:quote.reductions.map(item=>({...item}))},name:$('quote-client-name').value.trim()}}))});addDiscount(true);
 });
